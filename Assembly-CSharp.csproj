@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\MoneyPile.cs" />
     <Compile Include="Assets\QuickOutline\Scripts\Outline.cs" />
     <Compile Include="Assets\Scripts\FollowPlayerCamera.cs" />
+    <Compile Include="Assets\Scripts\Util.cs" />
     <Compile Include="Assets\Scripts\UpgradeArea.cs" />
     <Compile Include="Assets\Scripts\MoneyPileManager.cs" />
     <Compile Include="Assets\Scripts\UI_Manager.cs" />

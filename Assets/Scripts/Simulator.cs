@@ -10,6 +10,7 @@ public enum FoodState
     Delivering,
     ReachCounter,
     PuttingInCounter,
+    CustomerPick,
     CustomerPicking,
     CustomerPicked,
     TESTING
@@ -21,9 +22,18 @@ public enum CustomerState
     GoInside,
     Waiting,
     PickingFood,
+    ChooseTable,
     GetToTable,
     Eating,
     Leaving
+}
+
+public enum TableState
+{
+    EmptyBoth,
+    EmptyLeft,
+    EmptyRight,
+    Full
 }
 
 public class Simulator : MonoBehaviour
@@ -43,20 +53,23 @@ public class Simulator : MonoBehaviour
     public MoneyPileManager moneyPileManager;
     public NPC_Manager npcManager;
     public PlayerController playerController;
+    public Util util;
 
     private GameObject[] customers = new GameObject[10];
     public GameObject[] foods = new GameObject[6];
-    public CustomerState[] customerStates = new CustomerState[10];
-    public int[] customerFoodMap;
+    public CustomerState[] customerStates;
+    public int[] customerNumFoodDemand;
     public FoodState[] foodStates = new FoodState[6];
     public string[] foodBelongTo;
     public int[] foodColumnIndex;
+    public TableState[] tableStates;
     public int firstQueueCustomerIndex = 0;
 
 
 
     public Vector3 counterSize;
     public Vector3 foodSize;
+    public Vector3 tableSize;
 
 
     private bool isShowCustomerDialog = false;
@@ -68,14 +81,11 @@ public class Simulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        customerFoodMap = new int[customers.Length];
         foodBelongTo = new string[foods.Length];
         foodColumnIndex = new int[foods.Length];
-
-        for (int i = 0; i < customerFoodMap.Length; i++)
-        {
-            customerFoodMap[i] = -1;
-        }
+        customerStates = new CustomerState[customers.Length];
+        customerNumFoodDemand = new int[customers.Length];
+        tableStates = new TableState[tables.Length];
 
         deltaTime = Time.deltaTime;
 
@@ -93,12 +103,17 @@ public class Simulator : MonoBehaviour
             foodStates[i] = FoodState.NotSpawn;
         }
 
-        counterSize = counter.GetComponent<MeshRenderer>().bounds.size;
+        for (int i = 0; i < tableStates.Length; i++)
+        {
+            tableStates[i] = TableState.EmptyBoth;
+        }
 
+        counterSize = counter.GetComponent<MeshRenderer>().bounds.size;
         for (int i = 0; i < foods[0].transform.childCount; i++)
         {
             foodSize += foods[0].transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size;
         }
+        tableSize = tables[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size;
 
         StartCoroutine(SpawnCustomer());
         StartCoroutine(SpawnFood());
@@ -153,9 +168,94 @@ public class Simulator : MonoBehaviour
                     }
                 }
             }
+            else if (customerStates[i] == CustomerState.ChooseTable)
+            {
+                Vector3 destination = Vector3.zero;
+                bool isFoundTable = false;
+
+                for (int j = 0; j < tables.Length; j++)
+                {
+                    if (tableStates[j] == TableState.EmptyBoth)
+                    {
+                        destination = new Vector3(
+                            tables[j].transform.position.x - tableSize.x / 2 - 6,
+                            customers[i].transform.position.y,
+                            tables[j].transform.position.z
+                            );
+
+                        tableStates[j] = TableState.EmptyRight;
+                        isFoundTable = true;
+                    }
+                    else if (tableStates[j] == TableState.EmptyLeft)
+                    {
+                        destination = new Vector3(
+                            tables[j].transform.position.x - tableSize.x / 2 - 6,
+                            customers[i].transform.position.y,
+                            tables[j].transform.position.z
+                            );
+
+                        tableStates[j] = TableState.Full;
+                        isFoundTable = true;
+                    }
+                    else if (tableStates[j] == TableState.EmptyRight)
+                    {
+                        destination = new Vector3(
+                            tables[j].transform.position.x + tableSize.x / 2 + 6,
+                            customers[i].transform.position.y,
+                            tables[j].transform.position.z
+                            );
+
+                        tableStates[j] = TableState.Full;
+                        isFoundTable = true;
+                    }
+
+                    if (isFoundTable)
+                    {
+                        int customerIndex = i;
+                        int tableIndex = j;
+                        Debug.Log(destination);
+                        StartCoroutine
+                        (
+                            util.MoveTo(customers[i].transform, destination, speed,
+                            () =>
+                            {
+                                customers[customerIndex].GetComponent<Animator>().SetBool("isMoving", false);
+                                customers[customerIndex].GetComponent<Animator>().SetBool("isHoldingFood", false);
+
+                                for (int j = 0; j < foods.Length; j++)
+                                {
+                                    if (foodBelongTo[j] == "customer" + customerIndex)
+                                    {
+                                        foodBelongTo[j] = "table" + tableIndex;
+                                        foodColumnIndex[j] = numFoodHoldOf("table" + tableIndex) - 1;
+
+                                        foods[j].transform.position = new Vector3(
+                                        tables[tableIndex].transform.position.x,
+                                        tables[tableIndex].transform.position.y + tableSize.y
+                                        + foodColumnIndex[j] * foodSize.y,
+                                        tables[tableIndex].transform.position.z
+                                        );
+                                    }
+                                }
+
+                                StartCoroutine(Eat(customerIndex));
+                                customerStates[customerIndex] = CustomerState.Eating;
+                            }
+                            )
+                        );
+
+                        customerStates[i] = CustomerState.GetToTable;
+                        break;
+                    }
+                    else
+                    {
+                        
+                    }
+                }
+            }
             else if (customerStates[i] == CustomerState.GetToTable)
             {
-                Vector3 tablePosition = tables[0].transform.position;
+                /*Vector3 tablePosition = tables[0].transform.position;
 
                 if (Vector3.Distance(customers[i].transform.position, tablePosition) > 1)
                 {
@@ -164,17 +264,26 @@ public class Simulator : MonoBehaviour
                 }
                 else
                 {
-                    int foodIndex = customerFoodMap[i];
-
                     customers[i].transform.position = new Vector3(
                         tablePosition.x - 4, customers[i].transform.position.y, tablePosition.z
                         );
                     customers[i].GetComponent<Animator>().SetBool("isMoving", false);
-                    foods[foodIndex].transform.position = tablePosition;
+
+                    for (int j = 0; j < foods.Length; j++)
+                    {
+                        if (foodBelongTo[j] == "customer" + i)
+                        {
+                            foods[j].transform.position = new Vector3(
+                                tablePosition.x,
+                                tablePosition.y + foodColumnIndex[j] * foodSize.y,
+                                tablePosition.z
+                                );
+                        }
+                    }
 
                     StartCoroutine(Eat(i));
                     customerStates[i] = CustomerState.Eating;
-                }
+                }*/
             }
             else if (customerStates[i] == CustomerState.Leaving)
             {
@@ -207,24 +316,24 @@ public class Simulator : MonoBehaviour
                 }
                 else if (foodBelongTo[i].Contains("npc"))
                 {
-                    GameObject npc = new GameObject();
+                    int npcIndex = 0;
 
                     for (int j = 0; j < npcManager.npcs.Length; j++)
                     {
                         if (foodBelongTo[i] == npcManager.npcControllers[j].id)
                         {
-                            npc = npcManager.npcs[j];
+                            npcIndex = j;
                         }
                     }
 
                     foods[i].transform.position = new Vector3
                     (
-                        npc.transform.position.x,
-                        npc.transform.position.y +
+                        npcManager.npcs[npcIndex].transform.position.x,
+                        npcManager.npcs[npcIndex].transform.position.y +
                         7 + foodColumnIndex[i] * foodSize.y,
-                        npc.transform.position.z
+                        npcManager.npcs[npcIndex].transform.position.z
                     ) +
-                        npc.transform.forward * 2;
+                        npcManager.npcs[npcIndex].transform.forward * 2;
                 }
             }
 
@@ -233,38 +342,38 @@ public class Simulator : MonoBehaviour
                 int index = i;
 
                 StartCoroutine(
-                    CurveMove(
-                        foods[i].transform,
-                        foods[i].transform.position,
-                        counter.transform.position +
-                        new Vector3(6,
-                        counterSize.y / 2 +
-                        foodColumnIndex[i] * foodSize.y,
-                        0),
-                        12,
-                        0,
-                        () =>
-                        {
-                            foodStates[index] = FoodState.CustomerPicking;
+                        CurveMove(
+                            foods[i].transform,
+                            foods[i].transform.position,
+                            counter.transform.position +
+                            new Vector3(6,
+                            counterSize.y / 2 +
+                            foodColumnIndex[i] * foodSize.y,
+                            0),
+                            12,
+                            0,
+                            () =>
+                            {
+                                if (playerController.numberFoodHold > 0)
+                                {
+                                    playerController.numberFoodHold--;
+                                }
+                                else
+                                {
+                                    playerController.playerState = PlayerState.Ready;
+                                    playerController.playerAnimator.SetBool("isHoldingFood", false);
+                                    playerController.playerAnimator.SetBool("isHoldingFoodStanding", false);
+                                }
 
-                            if (playerController.numberFoodHold > 0)
-                            {
-                                playerController.numberFoodHold--;
+                                foodStates[index] = FoodState.CustomerPick;
                             }
-                            else
-                            {
-                                playerController.playerState = PlayerState.Ready;
-                                playerController.playerAnimator.SetBool("isHoldingFood", false);
-                                playerController.playerAnimator.SetBool("isHoldingFoodStanding", false);
-                            }
-                        }
-                    )
-                );
+                        )
+                    );
 
                 foodStates[i] = FoodState.PuttingInCounter;
             }
 
-            if (foodStates[i] == FoodState.CustomerPicking)
+            if (foodStates[i] == FoodState.CustomerPick)
             {
                 for (int j = 0; j < customers.Length; j++)
                 {
@@ -275,40 +384,54 @@ public class Simulator : MonoBehaviour
                         int foodIndex = i;
                         int custommerIndex = j;
 
+                        foodBelongTo[i] = "customer" + custommerIndex;
+
+                        int numFoodCustomerHold = numFoodHoldOf("customer" + custommerIndex);
+
+                        foodColumnIndex[i] = numFoodCustomerHold - 1;
+                        foodStates[i] = FoodState.CustomerPicking;
+
                         StartCoroutine(
                             CurveMove(
                                 foods[i].transform,
                                 foods[i].transform.position,
-                                customerTf.position + new Vector3(0, 7, 0)
-                                + customerTf.forward * 4
+                                customerTf.position
+                                + new Vector3(0, 7 + foodColumnIndex[i] * foodSize.y, 0)
+                                + customerTf.forward * 2
                                 ,
                                 12,
                                 0,
                                 () =>
                                 {
-                                    customerStates[custommerIndex] = CustomerState.GetToTable;
-                                    customers[custommerIndex].transform.LookAt(tables[0].transform);
-                                    customers[custommerIndex].GetComponent<Animator>().SetBool("isMoving", true);
-
-                                    setNewFirstQueueCustomerIndex();
-
-                                    foodStates[foodIndex] = FoodState.CustomerPicked;
-
-                                    customerFoodMap[custommerIndex] = foodIndex;
-
-                                    for (int k = 0; k < customers.Length; k++)
+                                    if (numFoodCustomerHold == 1)
                                     {
-                                        if (customerStates[k] == CustomerState.Waiting)
+                                        customers[custommerIndex].GetComponent<Animator>().SetBool("isHoldingFood", true);
+                                        customers[custommerIndex].GetComponent<Animator>().SetBool("isHoldingFoodStanding", true);
+                                    }
+
+                                    if (numFoodCustomerHold == customerNumFoodDemand[custommerIndex])
+                                    {
+                                        customers[custommerIndex].transform.LookAt(tables[0].transform);
+                                        customers[custommerIndex].GetComponent<Animator>().SetBool("isMoving", true);
+                                        customers[custommerIndex].GetComponent<Animator>().SetBool("isHoldingFoodStanding", false);
+                                        customerStates[custommerIndex] = CustomerState.ChooseTable;
+
+                                        setNewFirstQueueCustomerIndex();
+
+                                        for (int k = 0; k < customers.Length; k++)
                                         {
-                                            customers[k].GetComponent<Animator>().SetBool("isMoving", true);
-                                            customerStates[k] = CustomerState.GoInside;
+                                            if (customerStates[k] == CustomerState.Waiting)
+                                            {
+                                                customers[k].GetComponent<Animator>().SetBool("isMoving", true);
+                                                customerStates[k] = CustomerState.GoInside;
+                                            }
                                         }
                                     }
+
+                                    foodStates[foodIndex] = FoodState.CustomerPicked;
                                 }
                             )
                         );
-
-                        customerStates[j] = CustomerState.PickingFood;
 
                         break;
                     }
@@ -319,15 +442,19 @@ public class Simulator : MonoBehaviour
             {
                 for (int j = 0; j < customers.Length; j++)
                 {
-                    if (customerStates[j] == CustomerState.GetToTable)
+                    if (customerStates[j] == CustomerState.GetToTable &&
+                        foodBelongTo[i] == "customer" + j
+                        )
                     {
+
                         foods[i].transform.position = new Vector3
-                    (
-                        customers[j].transform.position.x,
-                        customers[j].transform.position.y + 6,
-                        customers[j].transform.position.z
-                    ) +
-                        customers[j].transform.forward * 3;
+                            (
+                                customers[j].transform.position.x,
+                                customers[j].transform.position.y
+                                + 7 + foodColumnIndex[i] * foodSize.y,
+                                customers[j].transform.position.z
+                            ) +
+                                customers[j].transform.forward * 2;
 
                         break;
                     }
@@ -351,6 +478,7 @@ public class Simulator : MonoBehaviour
                         Random.Range(-30, -20));
 
                     customerStates[i] = CustomerState.GoInside;
+                    customerNumFoodDemand[i] = Random.Range(1, 2);
                     break;
                 }
             }
@@ -504,5 +632,20 @@ public class Simulator : MonoBehaviour
     void setCustomerMoving(int index, bool isMoving)
     {
         customers[index].GetComponent<Animator>().SetBool("isMoving", isMoving);
+    }
+
+    int numFoodHoldOf(string ownerName)
+    {
+        int num = 0;
+
+        for (int i = 0; i < foodBelongTo.Length; i++)
+        {
+            if (foodBelongTo[i] == ownerName)
+            {
+                num++;
+            }
+        }
+
+        return num;
     }
 }

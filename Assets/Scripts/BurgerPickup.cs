@@ -160,7 +160,7 @@ public class BurgerPickup : MonoBehaviour
                         simulator.foodColumnIndex[i] = numFoodTaken - 1;
 
                         Transform foodTransform = simulator.foods[i].transform;
-
+                      
                         StartCoroutine(
                             simulator.CurveMove
                             (

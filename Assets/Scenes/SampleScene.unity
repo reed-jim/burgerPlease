@@ -691,6 +691,7 @@ MonoBehaviour:
   moneyPileManager: {fileID: 1400535620}
   npcManager: {fileID: 1803314248}
   playerController: {fileID: 1194692574}
+  util: {fileID: 1836152641}
   foods:
   - {fileID: 0}
   - {fileID: 0}
@@ -699,13 +700,15 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   customerStates: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
-  customerFoodMap: 
+  customerNumFoodDemand: 
   foodStates: 000000000000000000000000000000000000000000000000
   foodBelongTo: []
   foodColumnIndex: 
+  tableStates: 
   firstQueueCustomerIndex: 0
   counterSize: {x: 0, y: 0, z: 0}
   foodSize: {x: 0, y: 0, z: 0}
+  tableSize: {x: 0, y: 0, z: 0}
 --- !u!4 &296701790
 Transform:
   m_ObjectHideFlags: 0
@@ -2849,6 +2852,50 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1194692578}
   m_SourcePrefab: {fileID: 100100000, guid: 09438781a56e5454489c4557ca2b88b1, type: 3}
+--- !u!1 &1836152640
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1836152642}
+  - component: {fileID: 1836152641}
+  m_Layer: 0
+  m_Name: Util
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1836152641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836152640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1663f8f6ceae51c47aa81d540ba21d70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1836152642
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836152640}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1843195098 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1d17e7c249ad60046b76a9015b9ad0aa, type: 3}
@@ -3179,3 +3226,4 @@ SceneRoots:
   - {fileID: 393388695}
   - {fileID: 1165380611}
   - {fileID: 1803314249}
+  - {fileID: 1836152642}
