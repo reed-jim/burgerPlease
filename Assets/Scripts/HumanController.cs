@@ -7,21 +7,34 @@ public enum HumanState
     Ready,
     Moving,
     PickingFood,
-    HoldingFood
+    HoldingFood,
+    PackagingFood,
+}
+
+public enum Task
+{
+    Nothing,
+    ServingFood,
+    PackagingFood,
+    DeliverTakeawayFood
 }
 
 public class HumanController : MonoBehaviour
 {
     private GameObject foodStorage;
     private GameObject counter;
+    private Simulator simulator;
+    private Util util;
     public float speed;
 
     public Animator animator;
-    public HumanState humanState = HumanState.Moving;
+    public HumanState humanState = HumanState.Ready;
+    public Task task;
     public bool setOnetimeValues = true;
     public string id;
     public int capacity = 2;
     public int numFoodHold = 0;
+    private Vector3 movingDestination;
 
     private float deltaTime;
 
@@ -30,6 +43,8 @@ public class HumanController : MonoBehaviour
     {
         foodStorage = GameObject.Find("Food Storage");
         counter = GameObject.Find("Counter");
+        simulator = GameObject.Find("Simulator").GetComponent<Simulator>();
+        util = GameObject.Find("Util").GetComponent<Util>();
         animator = GetComponent<Animator>();
 
         deltaTime = Time.deltaTime;
@@ -47,31 +62,88 @@ public class HumanController : MonoBehaviour
     {
         while (true)
         {
-            /* if (humanState == HumanState.Ready)
-             {
-                 transform.LookAt(
-                     new Vector3(
-                         foodStorage.transform.position.x,
-                     transform.position.y,
-                     foodStorage.transform.position.z)
-                     );
+            if (humanState == HumanState.Ready)
+            {
+                task = FindTask();
 
-                 animator.SetBool("isMoving", true);
+                if(task == Task.ServingFood ||
+                    task == Task.PackagingFood)
+                {
+                    movingDestination = new Vector3(
+                        foodStorage.transform.position.x,
+                        transform.position.y,
+                        foodStorage.transform.position.z
+                    );
 
-                 humanState = HumanState.Moving;
+                    humanState = HumanState.Moving;
+                }
+                else if(task == Task.DeliverTakeawayFood)
+                {
+                    for (int i = 0; i < simulator.packages.Length; i++)
+                    {
+                        if (simulator.packageStates[i] == PackageState.Filled)
+                        {
+                            movingDestination = new Vector3(
+                                simulator.packages[i].transform.position.x,
+                                transform.position.y,
+                                simulator.packages[i].transform.position.z
+                            );
 
-                 yield return new WaitForSeconds(0.02f);
-             }*/
-            if (humanState == HumanState.Moving)
+                            break;
+                        }
+                    }
+
+                    humanState = HumanState.Moving;
+                }
+
+/*
+
+                if (FindTask() == Task.ServingFood)
+                {
+                    movingDestination = new Vector3(
+                        counter.transform.position.x,
+                        transform.position.y,
+                        counter.transform.position.z
+                    );
+
+                    humanState = HumanState.Moving;
+                }
+                else if (FindTask() == Task.PackagingFood)
+                {
+                    movingDestination = new Vector3(
+                        simulator.packageTable.transform.position.x,
+                        transform.position.y,
+                        simulator.packageTable.transform.position.z
+                    );
+
+                    humanState = HumanState.Moving;
+                }
+                else if (FindTask() == Task.DeliverTakeawayFood)
+                {
+                    for (int i = 0; i < simulator.packages.Length; i++)
+                    {
+                        if(simulator.packageStates[i] == PackageState.Filled)
+                        {
+                            movingDestination = new Vector3(
+                                simulator.packages[i].transform.position.x,
+                                transform.position.y,
+                                simulator.packages[i].transform.position.z
+                            );
+
+                            break;
+                        }
+                    }
+
+                    humanState = HumanState.Moving;
+                }*/
+
+                yield return new WaitForSeconds(0.2f);
+            }
+            else if (humanState == HumanState.Moving)
             {
                 if (setOnetimeValues)
-                {
-                    transform.LookAt(
-                                new Vector3(
-                                    foodStorage.transform.position.x,
-                                transform.position.y,
-                                foodStorage.transform.position.z)
-                                );
+                {                  
+                    transform.LookAt(movingDestination);
 
                     animator.SetBool("isMoving", true);
                 }
@@ -81,33 +153,87 @@ public class HumanController : MonoBehaviour
                 }
 
                 transform.Translate(transform.forward * speed * deltaTime, Space.World);
-
-                yield return new WaitForSeconds(0.02f);
             }
             else if (humanState == HumanState.HoldingFood)
             {
                 if (setOnetimeValues)
                 {
-                    transform.LookAt(
-                    new Vector3(
-                        counter.transform.position.x,
-                    transform.position.y,
-                    counter.transform.position.z)
-                    );
+                    if (task == Task.ServingFood)
+                    {
+                        movingDestination = new Vector3(
+                            counter.transform.position.x,
+                            transform.position.y,
+                            counter.transform.position.z
+                        );
+                    }
+                    else if (task == Task.PackagingFood)
+                    {
+                        movingDestination = new Vector3(
+                            simulator.packageTable.transform.position.x,
+                            transform.position.y,
+                            simulator.packageTable.transform.position.z
+                        );
+                    }
+                    else if(task == Task.DeliverTakeawayFood)
+                    {
+                        movingDestination = new Vector3(
+                            simulator.takeawayCounter.transform.position.x,
+                            transform.position.y,
+                            simulator.takeawayCounter.transform.position.z
+                        );
+                    }
 
+                    transform.LookAt(movingDestination);
+                    
                     animator.SetBool("isHoldingFoodStanding", false);
 
                     setOnetimeValues = false;
                 }
-
+                
                 transform.Translate(transform.forward * speed * deltaTime, Space.World);
-
-                yield return new WaitForSeconds(0.02f);
             }
-            else
+            else if(humanState == HumanState.PackagingFood)
             {
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(2f);
+
+                ResetProperties();
+            }
+
+            yield return new WaitForSeconds(0.02f);
+        }
+    }
+
+    Task FindTask()
+    {
+        for (int i = 0; i < simulator.packages.Length; i++)
+        {
+            if (simulator.packageStates[i] == PackageState.Filling)
+            {
+                return Task.PackagingFood;
+            }
+            if (simulator.packageStates[i] == PackageState.Filled)
+            {
+                return Task.DeliverTakeawayFood;
             }
         }
+
+        /*for (int i = 0; i < simulator.foods.Length; i++)
+        {
+            if (simulator.foodStates[i] == FoodState.Wait)
+            {
+                return Task.ServingFood;
+            }
+        }*/
+
+        return Task.Nothing;
+    }
+
+    public void ResetProperties()
+    {
+        util.SetIdleAnimation(animator);
+
+        numFoodHold = 0;
+        setOnetimeValues = true;
+        humanState = HumanState.Ready;
     }
 }

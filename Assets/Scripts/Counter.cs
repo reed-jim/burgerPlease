@@ -82,9 +82,7 @@ public class Counter : MonoBehaviour
                 }
             }
 
-            controller.numFoodHold = 0;
-            controller.setOnetimeValues = true;
-            controller.humanState = HumanState.Moving;
+            controller.ResetProperties();
         }
     }
 }

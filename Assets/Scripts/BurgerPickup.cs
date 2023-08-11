@@ -18,7 +18,6 @@ public class BurgerPickup : MonoBehaviour
     public Vector3 minDistance;
 
     private float deltaTime;
-    private PickState pickState = PickState.None;
 
     // Start is called before the first frame update
     void Start()
@@ -150,11 +149,11 @@ public class BurgerPickup : MonoBehaviour
                     {
                         controller.humanState = HumanState.PickingFood;
                     }
-
+                    
                     if (numFoodTaken < capacity)
                     {
                         numFoodTaken++;
-
+                    
                         simulator.foodStates[i] = FoodState.Picking;
                         simulator.foodBelongTo[i] = controller.id;
                         simulator.foodColumnIndex[i] = numFoodTaken - 1;

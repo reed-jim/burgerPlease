@@ -60,7 +60,10 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\HumanController.cs" />
     <Compile Include="Assets\Scripts\ResourceManager.cs" />
+    <Compile Include="Assets\Scripts\Package.cs" />
     <Compile Include="Assets\Scripts\NPC_Manager.cs" />
+    <Compile Include="Assets\Scripts\TrashCan.cs" />
+    <Compile Include="Assets\Scripts\Table.cs" />
     <Compile Include="Assets\Scripts\MoneyPile.cs" />
     <Compile Include="Assets\QuickOutline\Scripts\Outline.cs" />
     <Compile Include="Assets\Scripts\FollowPlayerCamera.cs" />
