@@ -17,7 +17,8 @@ public enum FoodState
     CustomerPick,
     CustomerPicking,
     CustomerPicked,
-    InPackage
+    InPackage,
+    InTakeawayCounter
 }
 
 public enum CustomerState
@@ -46,7 +47,21 @@ public enum PackageState
     NotSpawn,
     Filling,
     Moving,
-    Filled
+    Filled,
+    Putting,
+    InTakeawayCounter
+}
+
+public enum CarState
+{
+    NotSpawn,
+    SetDirection,
+    GoToMainLane,
+    SetTurnDirection,
+    GoToStore,
+    Waiting,
+    TakingFood,
+    Done
 }
 
 public enum TrashState
@@ -67,8 +82,10 @@ public class Simulator : MonoBehaviour
     public GameObject foodPrefab;
     public GameObject trashPrefab;
     public GameObject packagePrefab;
+    public GameObject carPrefab;
     public GameObject counter;
     public GameObject foodDeliver;
+    public GameObject foodStorage;
     public GameObject packageTable;
     public GameObject takeawayCounter;
     public GameObject[] tables;
@@ -86,6 +103,7 @@ public class Simulator : MonoBehaviour
     private GameObject[] customers = new GameObject[10];
     public GameObject[] foods = new GameObject[6];
     public GameObject[] packages = new GameObject[10];
+    public GameObject[] cars = new GameObject[10];
     public CustomerState[] customerStates;
     public int[] customerNumFoodDemand;
     public FoodState[] foodStates = new FoodState[6];
@@ -93,6 +111,8 @@ public class Simulator : MonoBehaviour
     public int[] foodColumnIndex;
     public TableState[] tableStates;
     public string[] customerTableMap;
+
+    public CarState[] carStates;
 
     public PackageState[] packageStates;
     public string[] packageBelongTo;
@@ -113,8 +133,6 @@ public class Simulator : MonoBehaviour
     public Vector3 packageSize;
     public Vector3 packageTableSize;
     public Vector3 takeawayCounterSize;
-
-    private bool isShowCustomerDialog = false;
 
     private float deltaTime;
 
@@ -138,7 +156,7 @@ public class Simulator : MonoBehaviour
         packageStates = new PackageState[packages.Length];
         packageBelongTo = new string[packages.Length];
         foodIndexInPackage = new int[packages.Length];
-
+        carStates = new CarState[cars.Length];
 
         deltaTime = Time.deltaTime;
 
@@ -163,6 +181,13 @@ public class Simulator : MonoBehaviour
             packages[i].SetActive(false);
             packageStates[i] = PackageState.NotSpawn;
             packages[i].GetComponent<Package>().index = i;
+        }
+
+        for (int i = 0; i < cars.Length; i++)
+        {
+            cars[i] = Instantiate(carPrefab);
+            cars[i].SetActive(false);
+            carStates[i] = CarState.NotSpawn;
         }
 
         for (int i = 0; i < tables.Length; i++)
@@ -195,10 +220,12 @@ public class Simulator : MonoBehaviour
         StartCoroutine(SpawnCustomer());
         StartCoroutine(SpawnFood());
         StartCoroutine(SpawnPackage());
+        StartCoroutine(SpawnCar());
 
         StartCoroutine(SimulateCustomerCycle());
         StartCoroutine(SimulateFoodCycle());
         StartCoroutine(SimulatePackageCycle());
+        StartCoroutine(SimulateCarCycle());
         StartCoroutine(SimulateTrashCycle());
 
         customerDialog.SetActive(false);
@@ -254,8 +281,6 @@ public class Simulator : MonoBehaviour
                                 GetChild(0).GetComponent<TMP_Text>().text =
                                 "2";
                             customerDialog.SetActive(true);
-
-                            isShowCustomerDialog = true;
                         }
                     }
 
@@ -642,7 +667,117 @@ public class Simulator : MonoBehaviour
 
                         packages[i].transform.position = npcManager.npcs[npcIndex].transform.position
                             + new Vector3(0, 7, 0)
-                            + npcManager.npcs[npcIndex].transform.forward * 2;
+                            + npcManager.npcs[npcIndex].transform.forward * 4;
+                    }
+                }
+            }
+
+            yield return new WaitForSeconds(0.03f);
+        }
+    }
+
+    IEnumerator SimulateCarCycle()
+    {
+        while (true)
+        {
+            for (int i = 0; i < cars.Length; i++)
+            {
+                if (carStates[i] == CarState.SetDirection)
+                {
+                    cars[i].transform.LookAt(new Vector3(
+                        takeawayCounter.transform.position.x - 3 * takeawayCounterSize.x,
+                        cars[i].transform.position.y,
+                        cars[i].transform.position.z
+                        ));
+
+                    carStates[i] = CarState.GoToMainLane;
+                }
+                else if (carStates[i] == CarState.GoToMainLane)
+                {
+                    if(cars[i].transform.position.x > -20)
+                    {
+                        cars[i].transform.Translate(
+                            cars[i].transform.forward * speed * 25 * deltaTime, Space.World
+                        );
+                    }
+                    else
+                    {
+                        carStates[i] = CarState.SetTurnDirection;
+                    }
+                }
+                else if (carStates[i] == CarState.SetTurnDirection)
+                {
+                    cars[i].transform.LookAt(new Vector3(
+                        takeawayCounter.transform.position.x - 3 * takeawayCounterSize.x,
+                        cars[i].transform.position.y,
+                        takeawayCounter.transform.position.z
+                    ));
+
+                    carStates[i] = CarState.GoToStore;
+                }
+                else if (carStates[i] == CarState.GoToStore)
+                {
+                    if (cars[i].transform.position.z > takeawayCounter.transform.position.z)
+                    {
+                        cars[i].transform.Translate(
+                            cars[i].transform.forward * speed * 5 * deltaTime, Space.World
+                        );
+                    }
+                    else
+                    {
+                        carStates[i] = CarState.Waiting;
+                    } 
+                }
+                else if (carStates[i] == CarState.Waiting)
+                {
+                    int carIndex = i;
+
+                    for (int j = 0; j < packages.Length; j++)
+                    {
+                        int packageIndex = j;
+
+                        if(packageStates[j] == PackageState.InTakeawayCounter)
+                        {
+                            StartCoroutine(
+                                CurveMove(
+                                    packages[j].transform,
+                                    packages[j].transform.position,
+                                    cars[i].transform.position,
+                                    12,
+                                    0,
+                                    () =>
+                                        {
+                                            ResetPackageProperties(packageIndex);
+
+                                            for (int k = 0; k < foods.Length; k++)
+                                            {
+                                                if(foodBelongTo[k] == "package" + packageIndex)
+                                                {
+                                                    resetFoodProperties(k);
+                                                }
+                                            }
+
+                                            carStates[carIndex] = CarState.Done;
+                                        }
+                                    )
+                            );
+
+                            carStates[i] = CarState.TakingFood;
+                            break;
+                        }
+                    }
+                }
+                else if (carStates[i] == CarState.Done)
+                {
+                    if(cars[i].transform.position.z > -50)
+                    {
+                        cars[i].transform.Translate(
+                            cars[i].transform.forward * speed * 25 * deltaTime, Space.World
+                        );
+                    }
+                    else
+                    {
+                        ResetCarProperties(i);
                     }
                 }
             }
@@ -725,6 +860,29 @@ public class Simulator : MonoBehaviour
             }
 
             yield return new WaitForSeconds(1f);
+        }
+    }
+
+    IEnumerator SpawnCar()
+    {
+        while (true)
+        {
+            for (int i = 0; i < cars.Length; i++)
+            {
+                if (carStates[i] == CarState.NotSpawn)
+                {
+                    cars[i].transform.position = new Vector3(
+                        300, 0, 180
+                        );
+
+                    cars[i].SetActive(true);
+                    carStates[i] = CarState.SetDirection;
+
+                    break;
+                }
+            }
+
+            yield return new WaitForSeconds(5000f);
         }
     }
 
@@ -1027,6 +1185,19 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    public void ResetPackageProperties(int index)
+    {
+        packages[index].SetActive(false);
+        packageBelongTo[index] = "none";
+        packageStates[index] = PackageState.NotSpawn;
+    }
+
+    public void ResetCarProperties(int index)
+    {
+        cars[index].SetActive(false);
+        carStates[index] = CarState.NotSpawn;
+    }
+
     public void resetTrashProperties(int index)
     {
         trashs[index].SetActive(false);
@@ -1146,38 +1317,41 @@ public class Simulator : MonoBehaviour
 
     IEnumerator SpawnPackage()
     {
-        bool isSpawn = true;
-        int spawnIndex = -1;
-
-        for (int i = 0; i < packages.Length; i++)
+        while(true)
         {
-            if (packageStates[i] == PackageState.Filling)
+            bool isSpawn = true;
+            int spawnIndex = -1;
+
+            for (int i = 0; i < packages.Length; i++)
             {
-                isSpawn = false;
-                break;
+                if (packageStates[i] == PackageState.Filling)
+                {
+                    isSpawn = false;
+                    break;
+                }
+
+                if (packageStates[i] == PackageState.NotSpawn && spawnIndex == -1)
+                {
+                    spawnIndex = i;
+                }
             }
 
-            if (packageStates[i] == PackageState.NotSpawn && spawnIndex == -1)
+            if (isSpawn)
             {
-                spawnIndex = i;
+                packages[spawnIndex].transform.position = new Vector3(
+                    packageTable.transform.position.x + packageTableSize.x / 4,
+                    packageTable.transform.position.y + (packageTableSize.y + packageSize.y) / 2,
+                    packageTable.transform.position.z
+                );
+
+                packages[spawnIndex].SetActive(true);
+
+                packageBelongTo[spawnIndex] = "package table";
+                packageStates[spawnIndex] = PackageState.Filling;
             }
+
+            yield return new WaitForSeconds(0.05f);
         }
-
-        if (isSpawn)
-        {
-            packages[spawnIndex].transform.position = new Vector3(
-                packageTable.transform.position.x + packageTableSize.x / 4,
-                packageTable.transform.position.y + (packageTableSize.y + packageSize.y) / 2,
-                packageTable.transform.position.z
-            );
-
-            packages[spawnIndex].SetActive(true);
-
-            packageBelongTo[spawnIndex] = "package table";
-            packageStates[spawnIndex] = PackageState.Filling;
-        }
-
-        yield return new WaitForSeconds(0.05f);
     }
 
     public Vector3 GetFoodPositionInPackage(int packageIndex, int fillIndex)

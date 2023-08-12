@@ -75,6 +75,7 @@
     <Compile Include="Assets\Scripts\Counter.cs" />
     <Compile Include="Assets\Scripts\Simulator.cs" />
     <Compile Include="Assets\Scripts\BurgerPickup.cs" />
+    <Compile Include="Assets\Scripts\TakeawayCounter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
@@ -100,7 +101,7 @@
     <None Include="Assets\QuickOutline\Resources\Shaders\OutlineFill.shader" />
     <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />
-    <None Include="Assets\kenney_furniture-kit\License.txt" />
+    <None Include="Assets\Imported\kenney_furniture-kit\License.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Sprite.shader" />
   </ItemGroup>
   <ItemGroup>

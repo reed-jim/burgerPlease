@@ -760,8 +760,10 @@ MonoBehaviour:
   foodPrefab: {fileID: 2330486450010676636, guid: 40fd5669c7a942f4f801331fe69540a5, type: 3}
   trashPrefab: {fileID: 5088246433405857488, guid: bc090c5310813e945ac5d0ad4f636b6f, type: 3}
   packagePrefab: {fileID: 5689050410877818151, guid: ed417f98d910711428264d5f5bbfefa4, type: 3}
+  carPrefab: {fileID: 4539039917561355013, guid: 20c20e0b5a8bd59409fb927a6488e726, type: 3}
   counter: {fileID: 6082405}
   foodDeliver: {fileID: 374845290}
+  foodStorage: {fileID: 374845290}
   packageTable: {fileID: 1923557287}
   takeawayCounter: {fileID: 1019271885}
   tables:
@@ -792,6 +794,17 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  cars:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   customerStates: 00000000000000000000000000000000000000000000000000000000000000000000000000000000
   customerNumFoodDemand: 
   foodStates: 000000000000000000000000000000000000000000000000
@@ -799,7 +812,9 @@ MonoBehaviour:
   foodColumnIndex: 
   tableStates: 
   customerTableMap: []
+  carStates: 
   packageStates: 
+  packageBelongTo: []
   foodIndexInPackage: 
   trashStates: 
   trashBelongTo: []
@@ -845,7 +860,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!65 &374845291
 BoxCollider:
@@ -2070,6 +2085,7 @@ GameObject:
   - component: {fileID: 1019271888}
   - component: {fileID: 1019271887}
   - component: {fileID: 1019271886}
+  - component: {fileID: 1019271890}
   m_Layer: 0
   m_Name: Takeaway Counter
   m_TagString: Untagged
@@ -2096,8 +2112,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.5, y: 1, z: 1.5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 6, y: 1, z: 1.5}
+  m_Center: {x: -2, y: 0, z: 0}
 --- !u!23 &1019271887
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2163,6 +2179,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1019271890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1019271885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f68c3ec996660334bb45147125dec538, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  simulator: {fileID: 296701789}
 --- !u!1 &1117369472
 GameObject:
   m_ObjectHideFlags: 0

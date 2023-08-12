@@ -29,7 +29,7 @@ public class NPC_Manager : MonoBehaviour
         {
             npcs[i] = Instantiate(npcPrefab);
 
-            npcs[i].transform.position = new Vector3(65, 0, 0);
+            npcs[i].transform.position = new Vector3(65, 0, 15);
             npcs[i].SetActive(true);
 
             npcControllers[i] = npcs[i].GetComponent<HumanController>();

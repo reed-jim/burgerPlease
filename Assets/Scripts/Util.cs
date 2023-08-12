@@ -89,4 +89,9 @@ public class Util : MonoBehaviour
         animator.SetBool("isHoldingFood", true);
         animator.SetBool("isHoldingFoodStanding", true);
     }
+
+    public void preventOnTriggerTwice(Transform tf, Vector3 objectCenter)
+    {
+        tf.transform.Translate(tf.forward * 1, Space.World);
+    }
 }

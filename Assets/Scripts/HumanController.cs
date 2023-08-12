@@ -8,7 +8,10 @@ public enum HumanState
     Moving,
     PickingFood,
     HoldingFood,
+    HoldingPackage,
     PackagingFood,
+    MovedAllFoodToPackage,
+    PickingPackage
 }
 
 public enum Task
@@ -87,6 +90,7 @@ public class HumanController : MonoBehaviour
                                 simulator.packages[i].transform.position.x,
                                 transform.position.y,
                                 simulator.packages[i].transform.position.z
+                                - simulator.packageSize.z
                             );
 
                             break;
@@ -95,49 +99,10 @@ public class HumanController : MonoBehaviour
 
                     humanState = HumanState.Moving;
                 }
-
-/*
-
-                if (FindTask() == Task.ServingFood)
+                else if(task == Task.Nothing)
                 {
-                    movingDestination = new Vector3(
-                        counter.transform.position.x,
-                        transform.position.y,
-                        counter.transform.position.z
-                    );
-
-                    humanState = HumanState.Moving;
+                    yield return new WaitForSeconds(0.2f);
                 }
-                else if (FindTask() == Task.PackagingFood)
-                {
-                    movingDestination = new Vector3(
-                        simulator.packageTable.transform.position.x,
-                        transform.position.y,
-                        simulator.packageTable.transform.position.z
-                    );
-
-                    humanState = HumanState.Moving;
-                }
-                else if (FindTask() == Task.DeliverTakeawayFood)
-                {
-                    for (int i = 0; i < simulator.packages.Length; i++)
-                    {
-                        if(simulator.packageStates[i] == PackageState.Filled)
-                        {
-                            movingDestination = new Vector3(
-                                simulator.packages[i].transform.position.x,
-                                transform.position.y,
-                                simulator.packages[i].transform.position.z
-                            );
-
-                            break;
-                        }
-                    }
-
-                    humanState = HumanState.Moving;
-                }*/
-
-                yield return new WaitForSeconds(0.2f);
             }
             else if (humanState == HumanState.Moving)
             {
@@ -177,7 +142,8 @@ public class HumanController : MonoBehaviour
                     else if(task == Task.DeliverTakeawayFood)
                     {
                         movingDestination = new Vector3(
-                            simulator.takeawayCounter.transform.position.x,
+                            simulator.takeawayCounter.transform.position.x
+                            + simulator.takeawayCounterSize.x,
                             transform.position.y,
                             simulator.takeawayCounter.transform.position.z
                         );
@@ -192,10 +158,8 @@ public class HumanController : MonoBehaviour
                 
                 transform.Translate(transform.forward * speed * deltaTime, Space.World);
             }
-            else if(humanState == HumanState.PackagingFood)
+            else if(humanState == HumanState.MovedAllFoodToPackage)
             {
-                yield return new WaitForSeconds(2f);
-
                 ResetProperties();
             }
 

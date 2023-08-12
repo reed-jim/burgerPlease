@@ -28,7 +28,8 @@ public class Package : MonoBehaviour
         {
             HumanController npcController = other.GetComponent<HumanController>();
 
-            if (simulator.packageStates[index] == PackageState.Filling)
+            if (simulator.packageStates[index] == PackageState.Filling &&
+                npcController.humanState == HumanState.HoldingFood)
             {
                 StartCoroutine(MoveFoodOneByOneToPackage(npcController));
 
@@ -36,7 +37,8 @@ public class Package : MonoBehaviour
 
                 npcController.humanState = HumanState.PackagingFood;
             }
-            if (simulator.packageStates[index] == PackageState.Filled)
+            else if (simulator.packageStates[index] == PackageState.Filled &&
+                npcController.humanState == HumanState.Moving)
             {
                 StartCoroutine(
                     simulator.CurveMove(
@@ -44,25 +46,29 @@ public class Package : MonoBehaviour
                         transform.position,
                         other.gameObject.transform.position
                         + new Vector3(0, 7, 0)
-                        + other.gameObject.transform.forward * 2,
+                        + other.gameObject.transform.forward * 4,
                         12,
                         0,
                         () =>
                         {
-                            for (int i = 0; i < simulator.foods.Length; i++)
-                            {
-                                if (simulator.foodBelongTo[i] == "package" + index)
-                                {
-                                    simulator.foodStates[i] = FoodState.MovingWithPackage;
-                                }
-                            }
-
                             npcController.humanState = HumanState.HoldingFood;
                             simulator.packageBelongTo[index] = npcController.id;
                             simulator.packageStates[index] = PackageState.Moving;
                         }
                     )
                 );
+
+                for (int i = 0; i < simulator.foods.Length; i++)
+                {
+                    if (simulator.foodBelongTo[i] == "package" + index)
+                    {
+                        simulator.foodStates[i] = FoodState.MovingWithPackage;
+                    }
+                }
+
+                util.SetHoldingFoodStandingAnimation(npcController.animator);
+
+                npcController.humanState = HumanState.PickingPackage;
             }
         }
     }
@@ -144,15 +150,16 @@ public class Package : MonoBehaviour
                 simulator.foodStates[i] = FoodState.Putting;
 
                 currentMoved++;
-            }
 
-            if(currentMoved < capacity)
-            {
-                yield return new WaitForSeconds(0.5f);
-            }
-            else
-            {
-                yield return new WaitForSeconds(0.2f);
+                if (currentMoved < capacity)
+                {
+                    yield return new WaitForSeconds(0.2f);
+                }
+                else
+                {
+                    npcController.humanState = HumanState.MovedAllFoodToPackage;
+                    break;
+                }
             }
         }
     }
