@@ -89,6 +89,8 @@ public class Simulator : MonoBehaviour
     public GameObject packageTable;
     public GameObject takeawayCounter;
     public GameObject[] tables;
+    public GameObject[] upgradeAreas;
+    public TMP_Text[] upgradeMoneyTMP;
     private GameObject[] chairs;
     public GameObject[] trashs;
     public float speed = 5f;
@@ -100,13 +102,19 @@ public class Simulator : MonoBehaviour
     public PlayerController playerController;
     public Util util;
 
+    public GameObject loadBackground;
+    public GameObject customerSectionFloor;
+    public GameObject staffSectionFloor;
+
+
+
     private GameObject[] customers = new GameObject[10];
-    public GameObject[] foods = new GameObject[6];
+    public GameObject[] foods = new GameObject[36];
     public GameObject[] packages = new GameObject[10];
     public GameObject[] cars = new GameObject[10];
     public CustomerState[] customerStates;
     public int[] customerNumFoodDemand;
-    public FoodState[] foodStates = new FoodState[6];
+    public FoodState[] foodStates;
     public string[] foodBelongTo;
     public int[] foodColumnIndex;
     public TableState[] tableStates;
@@ -153,12 +161,22 @@ public class Simulator : MonoBehaviour
         trashStates = new TrashState[trashs.Length];
         trashBelongTo = new string[trashs.Length];
         trashColumnIndex = new int[trashs.Length];
+        foodStates = new FoodState[foods.Length];
         packageStates = new PackageState[packages.Length];
         packageBelongTo = new string[packages.Length];
         foodIndexInPackage = new int[packages.Length];
         carStates = new CarState[cars.Length];
 
         deltaTime = Time.deltaTime;
+
+
+
+        customerSectionFloor.GetComponent<MeshRenderer>().material.color =
+            new Color(90 / 255f, 60 / 255f, 50 / 255f);
+        staffSectionFloor.GetComponent<MeshRenderer>().material.color =
+            new Color(1, 150 / 255f, 140 / 255f);
+
+
 
         for (int i = 0; i < customers.Length; i++)
         {
@@ -172,6 +190,7 @@ public class Simulator : MonoBehaviour
         {
             foods[i] = Instantiate(foodPrefab);
             foods[i].SetActive(false);
+            foodBelongTo[i] = "none";
             foodStates[i] = FoodState.NotSpawn;
         }
 
@@ -209,10 +228,31 @@ public class Simulator : MonoBehaviour
         counterSize = counter.GetComponent<MeshRenderer>().bounds.size;
         for (int i = 0; i < foods[0].transform.childCount; i++)
         {
-            foodSize += foods[0].transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size;
+            if(i == 0)
+            {
+                foodSize = new Vector3(
+                    foods[0].transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.x,
+                    0,
+                    foods[0].transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.z
+                );
+            }
+            foodSize.y += foods[0].transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.y;
         }
         packageSize = packages[0].GetComponent<MeshRenderer>().bounds.size;
-        packageTableSize = packageTable.GetComponent<MeshRenderer>().bounds.size;
+        for (int i = 0; i < packageTable.transform.childCount; i++)
+        {
+            if(i == 0)
+            {
+                packageTableSize = new Vector3(
+                    0,
+                    packageTable.transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.y,
+                    packageTable.transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.z
+                );
+            }
+
+            packageTableSize.x +=
+                packageTable.transform.GetChild(i).GetComponent<MeshRenderer>().bounds.size.x;
+        }
         takeawayCounterSize = takeawayCounter.GetComponent<MeshRenderer>().bounds.size;
         tableSize = tables[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size;
         trashSize = trashs[0].GetComponent<MeshRenderer>().bounds.size;
@@ -221,6 +261,7 @@ public class Simulator : MonoBehaviour
         StartCoroutine(SpawnFood());
         StartCoroutine(SpawnPackage());
         StartCoroutine(SpawnCar());
+        StartCoroutine(SpawnUpgradeArea());
 
         StartCoroutine(SimulateCustomerCycle());
         StartCoroutine(SimulateFoodCycle());
@@ -522,109 +563,12 @@ public class Simulator : MonoBehaviour
                             npcManager.npcs[npcIndex].transform.forward * 2;
                     }
                 }
-                else if (foodStates[i] == FoodState.ReachCounter)
-                {
-                    int index = i;
-
-                    StartCoroutine(
-                            CurveMove(
-                                foods[i].transform,
-                                foods[i].transform.position,
-                                counter.transform.position +
-                                new Vector3(6,
-                                counterSize.y / 2 +
-                                foodColumnIndex[i] * foodSize.y,
-                                0),
-                                12,
-                                0,
-                                () =>
-                                {
-                                    if (playerController.numberFoodHold > 0)
-                                    {
-                                        playerController.numberFoodHold--;
-                                    }
-                                    else
-                                    {
-                                        playerController.playerState = PlayerState.Ready;
-                                        playerController.playerAnimator.SetBool("isHoldingFood", false);
-                                        playerController.playerAnimator.SetBool("isHoldingFoodStanding", false);
-                                    }
-
-                                    foodStates[index] = FoodState.CustomerPick;
-                                }
-                            )
-                        );
-
-                    foodStates[i] = FoodState.PuttingInCounter;
-                }
                 else if(foodStates[i] == FoodState.MovingWithPackage)
                 {
                     int packageIndex = int.Parse(foodBelongTo[i][7].ToString());
 
-                    foods[i].transform.position = GetFoodPositionInPackage(packageIndex, i);
-                }
-                else if (foodStates[i] == FoodState.CustomerPick)
-                {
-                    /*for (int j = 0; j < customers.Length; j++)
-                    {
-                        if (customerStates[j] == CustomerState.Waiting &&
-                            j == firstQueueCustomerIndex)
-                        {
-                            Transform customerTf = customers[j].transform;
-                            int foodIndex = i;
-                            int customerIndex = j;
-
-                            foodBelongTo[i] = "customer" + customerIndex;
-
-                            int numFoodCustomerHold = numFoodHoldOf("customer" + customerIndex);
-
-                            foodColumnIndex[i] = numFoodCustomerHold - 1;
-                            foodStates[i] = FoodState.CustomerPicking;
-
-                            StartCoroutine(
-                                CurveMove(
-                                    foods[i].transform,
-                                    foods[i].transform.position,
-                                    customerTf.position
-                                    + new Vector3(0, 7 + foodColumnIndex[i] * foodSize.y, 0)
-                                    + customerTf.forward * 2
-                                    ,
-                                    12,
-                                    0,
-                                    () =>
-                                    {
-                                        if (numFoodCustomerHold == 1)
-                                        {
-                                            customers[customerIndex].GetComponent<Animator>().SetBool("isHoldingFood", true);
-                                            customers[customerIndex].GetComponent<Animator>().SetBool("isHoldingFoodStanding", true);
-                                        }
-
-                                        if (numFoodCustomerHold == customerNumFoodDemand[customerIndex])
-                                        {
-                                            customerStates[customerIndex] = CustomerState.ChooseTable;
-
-                                            setNewFirstQueueCustomerIndex();
-
-                                            for (int k = 0; k < customers.Length; k++)
-                                            {
-                                                if (customerStates[k] == CustomerState.Waiting)
-                                                {
-                                                    customers[k].GetComponent<Animator>().SetBool("isMoving", true);
-                                                    customerStates[k] = CustomerState.GoInside;
-                                                }
-                                            }
-                                        }
-
-                                        foodStates[foodIndex] = FoodState.CustomerPicked;
-                                    }
-                                )
-                            );
-
-                            yield return new WaitForSeconds(0.5f);
-
-                            break;
-                        }
-                    }*/
+                    foods[i].transform.position =
+                        GetFoodPositionInPackage(packageIndex, foodIndexInPackage[i]);
                 }
                 else if (foodStates[i] == FoodState.CustomerPicked)
                 {
@@ -649,7 +593,7 @@ public class Simulator : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.03f);
+            yield return new WaitForSeconds(0.01f);
         }
     }
 
@@ -661,7 +605,13 @@ public class Simulator : MonoBehaviour
             {
                 if (packageStates[i] == PackageState.Moving)
                 {
-                    if (packageBelongTo[i].Contains("npc"))
+                    if(packageBelongTo[i] == "player")
+                    {
+                        packages[i].transform.position = player.transform.position
+                            + new Vector3(0, 7, 0)
+                            + player.transform.forward * 4;
+                    }
+                    else if (packageBelongTo[i].Contains("npc"))
                     {
                         int npcIndex = int.Parse(packageBelongTo[i][3].ToString());
 
@@ -672,7 +622,7 @@ public class Simulator : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.03f);
+            yield return new WaitForSeconds(0.01f);
         }
     }
 
@@ -840,16 +790,18 @@ public class Simulator : MonoBehaviour
                 if (foodStates[i] == FoodState.NotSpawn)
                 {
                     int row = 2;
-                    int col = foods.Length / row;
+                    int col = 3;
+                    int numFoodPerLayer = 6;
 
                     Vector3 foodDeliverSize = foodDeliver.GetComponent<MeshRenderer>().bounds.size;
-                    int x = i % col;
-                    int y = (i - x) / col;
+                    int x = (i % numFoodPerLayer) % col;
+                    int z = ((i % numFoodPerLayer) - x) / col;
+                    int y = (i - i % numFoodPerLayer) / numFoodPerLayer;
 
                     foods[i].transform.position = new Vector3(
                         foodDeliver.transform.position.x - foodDeliverSize.x / 2 + (x + 1) * foodDeliverSize.x / (col + 1),
-                        foodDeliver.transform.position.y + (foodDeliverSize.y + foodSize.y) / 2,
-                        foodDeliver.transform.position.z + foodDeliverSize.z / 2 - (y + 1) * foodDeliverSize.z / (row + 1)
+                        foodDeliver.transform.position.y + foodDeliverSize.y / 2 + y * foodSize.y,
+                        foodDeliver.transform.position.z + foodDeliverSize.z / 2 - (z + 1) * foodDeliverSize.z / (row + 1)
                     );
 
                     foods[i].SetActive(true);
@@ -884,6 +836,22 @@ public class Simulator : MonoBehaviour
 
             yield return new WaitForSeconds(5000f);
         }
+    }
+
+    IEnumerator SpawnUpgradeArea()
+    {
+        upgradeAreas[0].transform.position = new Vector3(
+            tables[0].transform.position.x + 30,
+            upgradeAreas[0].transform.position.y,
+            tables[0].transform.position.z
+        );
+
+        upgradeMoneyTMP[0].rectTransform.position = upgradeAreas[0].transform.position
+            + new Vector3(0, 1, 0);
+
+        upgradeAreas[0].SetActive(true);
+
+        yield return new WaitForSeconds(5f);
     }
 
     IEnumerator Eat(int customerIndex)
@@ -1069,6 +1037,7 @@ public class Simulator : MonoBehaviour
             {
                 num++;
             }
+
             if (isContain && foodBelongTo[i].Contains(ownerName))
             {
                 num++;
@@ -1090,7 +1059,6 @@ public class Simulator : MonoBehaviour
     {
         for (int i = 0; i < foods.Length; i++)
         {
-
             if (numFoodHoldOf("customer" + customerIndex) < 2)
             {
                 if (foodStates[i] == FoodState.CustomerPick)
@@ -1131,14 +1099,14 @@ public class Simulator : MonoBehaviour
                             }
                         )
                     );
+
+                    yield return new WaitForSeconds(0.2f);
                 }
             }
             else
             {
                 break;
             }
-
-            yield return new WaitForSeconds(0.5f);
         }
     }
 
@@ -1381,5 +1349,12 @@ public class Simulator : MonoBehaviour
         }
 
         return num;
+    }
+
+    IEnumerator LoadGame()
+    {
+        yield return new WaitForSeconds(3f);
+
+        loadBackground.SetActive(false);
     }
 }

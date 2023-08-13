@@ -30,30 +30,12 @@ public class Counter : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
-            playerController.gameObject.GetComponent<Animator>().SetBool("isHoldingFood", false);
-
-            int numFoodBelongToCounter = 0;
-
-            for (int i = 0; i < simulator.foods.Length; i++)
+            if(playerController.playerState == PlayerState.HoldingFoodMoving)
             {
-                if (simulator.foodBelongTo[i] == "counter")
-                {
-                    numFoodBelongToCounter++;
-                }
-            }
+                StartCoroutine(MoveFoodOneByOne());
 
-            for (int i = 0; i < simulator.foods.Length; i++)
-            {
-                if (simulator.foodBelongTo[i] == "player")
-                {
-                    numFoodBelongToCounter++;
-                    simulator.foodBelongTo[i] = "counter";
-                    simulator.foodColumnIndex[i] = numFoodBelongToCounter - 1;
-                    simulator.foodStates[i] = FoodState.ReachCounter;
-                }
+                playerController.playerState = PlayerState.PuttingFood;
             }
-
-            playerController.playerState = PlayerState.Ready;
         }
         else if (other.CompareTag("NPC"))
         {
@@ -83,6 +65,74 @@ public class Counter : MonoBehaviour
             }
 
             controller.ResetProperties();
+        }
+
+        IEnumerator MoveFoodOneByOne()
+        {
+            int capacity = playerController.capacity;
+            int numFoodBelongToCounter = 0;
+            int numFoodMoved = 0;
+
+            for (int i = 0; i < simulator.foods.Length; i++)
+            {
+                if (simulator.foodBelongTo[i] == "counter")
+                {
+                    numFoodBelongToCounter++;
+                }
+            }
+
+            for (int i = 0; i < simulator.foods.Length; i++)
+            {
+                if(numFoodMoved < capacity)
+                {
+                    if (simulator.foodBelongTo[i] == "player")
+                    {
+                        numFoodBelongToCounter++;
+                        simulator.foodBelongTo[i] = "counter";
+                        simulator.foodColumnIndex[i] = numFoodBelongToCounter - 1;
+
+
+                        int foodIndex = i;
+
+                        StartCoroutine(
+                            simulator.CurveMove(
+                                simulator.foods[i].transform,
+                                simulator.foods[i].transform.position,
+                                simulator.counter.transform.position +
+                                new Vector3(6,
+                                simulator.counterSize.y / 2 +
+                                simulator.foodColumnIndex[i] * simulator.foodSize.y,
+                                0),
+                                12,
+                                0,
+                                () =>
+                                {
+                                    if (playerController.numberFoodHold > 0)
+                                    {
+                                        playerController.numberFoodHold--;
+                                    }
+                                    if (playerController.numberFoodHold == 0)
+                                    {
+                                        playerController.playerState = PlayerState.Ready;
+                                    }
+
+                                    simulator.foodStates[foodIndex] = FoodState.CustomerPick;
+                                }
+                            )
+                        );
+
+                        numFoodMoved++;
+
+                        simulator.foodStates[i] = FoodState.PuttingInCounter;
+
+                        yield return new WaitForSeconds(0.2f);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
     }
 }

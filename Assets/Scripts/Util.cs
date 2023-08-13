@@ -83,6 +83,20 @@ public class Util : MonoBehaviour
         animator.SetBool("isHoldingFoodStanding", false);
     }
 
+    public void SetMovingAnimation(Animator animator)
+    {
+        animator.SetBool("isMoving", true);
+        animator.SetBool("isHoldingFood", false);
+        animator.SetBool("isHoldingFoodStanding", false);
+    }
+
+    public void SetHoldingFoodMovingAnimation(Animator animator)
+    {
+        animator.SetBool("isMoving", true);
+        animator.SetBool("isHoldingFood", true);
+        animator.SetBool("isHoldingFoodStanding", false);
+    }
+
     public void SetHoldingFoodStandingAnimation(Animator animator)
     {
         animator.SetBool("isMoving", false);

@@ -5,18 +5,29 @@ using UnityEngine;
 public class UpgradeArea : MonoBehaviour
 {
     public GameObject player;
-    private MeshRenderer meshRenderer;
+    public Simulator simulator;
+    public ResourceManager resourceManager;
+
+    private float FILL_RATE_RANGE = 1.5f;
+
     public Material material;
-    public float fillRateSpeed = 0.002f;
+
+    private float fillRate = -0.5f;
+    private float fillRateSpeed = 0.002f;
     public float maxFillRate = 1f;
 
     private bool isInside = false;
-    private float fillRate = -0.5f;    
+
+    public int requireValue = 200;
+    public int remainRequireValue;
+    public int valueInEachTime;
 
     // Start is called before the first frame update
     void Start()
     {
-        meshRenderer = GetComponent<MeshRenderer>();
+        remainRequireValue = requireValue;
+
+        fillRateSpeed = ((float)valueInEachTime / requireValue) * FILL_RATE_RANGE;
     }
 
     // Update is called once per frame
@@ -24,14 +35,21 @@ public class UpgradeArea : MonoBehaviour
     {
         if (isInside)
         {
-            if(fillRate < maxFillRate)
+            if (resourceManager.money > valueInEachTime)
             {
-                fillRate += fillRateSpeed;
-                material.SetFloat("_FillRate", fillRate);
-            }
-            else
-            {
-                Destroy(gameObject);
+                if (fillRate < maxFillRate)
+                {
+                    fillRate += fillRateSpeed;
+                    material.SetFloat("_FillRate", fillRate);
+
+                    resourceManager.money -= valueInEachTime;
+                    remainRequireValue -= valueInEachTime;
+                    simulator.upgradeMoneyTMP[0].text = "$" + remainRequireValue;
+                }
+                else
+                {
+                    Destroy(gameObject);
+                }
             }
         }
     }

@@ -5,12 +5,18 @@ using UnityEngine;
 public enum PlayerState {
     Ready,
     PickingFood,
-    HoldingFood
+    PuttingFood,
+    HoldingFood,
+    HoldingFoodMoving,
+    PackagingFood,
+    PickingPackage,
+    HoldingPackageMoving
 }
 
 public class PlayerController : MonoBehaviour
 {
     public Simulator simulator;
+    public Util util;
     public Animator playerAnimator;
     public float speed = 5;
     public float rotateSpeed = 5;
@@ -21,8 +27,10 @@ public class PlayerController : MonoBehaviour
     Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
     float rayLength;
 
-    private bool isSetAnimation = false;
+    private bool isPrevMove = false;
+    public bool isSetAnimation = false;
     public PlayerState playerState = PlayerState.Ready;
+    public int capacity = 2;
     public int numberFoodHold = 0;
 
     // Start is called before the first frame update
@@ -35,49 +43,90 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Movement
-        if (Input.GetMouseButton(0) && playerState != PlayerState.PickingFood)
+        bool moveCondition = playerState == PlayerState.Ready
+                || playerState == PlayerState.HoldingFoodMoving
+                || playerState == PlayerState.HoldingPackageMoving;
+
+        bool isMove = Input.GetMouseButton(0) && moveCondition;
+
+        if(isMove != isPrevMove)
         {
-            Ray cameraRay = mainCamera.ScreenPointToRay(Input.mousePosition);
-            Vector3 pointToLook = Vector3.zero;
+            isSetAnimation = true;
+        }
 
-            if (groundPlane.Raycast(cameraRay, out rayLength))
+
+
+        // Movement
+        if (isMove)
+        {
+            if(isSetAnimation)
             {
-                pointToLook = cameraRay.GetPoint(rayLength);
-
-                transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
-            }
-            
-            transform.LookAt(new Vector3(
-                pointToLook.x, transform.position.y, pointToLook.z
-                ));
-
-            transform.Translate(transform.forward * speed * deltaTime, Space.World);
-
-            if(!isSetAnimation)
-            {
-                if(playerState == PlayerState.Ready)
+                if (playerState == PlayerState.Ready)
                 {
-                    playerAnimator.SetBool("isMoving", true);
+                    util.SetMovingAnimation(playerAnimator);
                 }
-                else if(playerState == PlayerState.HoldingFood)
+                else if(playerState == PlayerState.HoldingFoodMoving
+                    || playerState == PlayerState.HoldingPackageMoving)
                 {
-                    playerAnimator.SetBool("isHoldingFoodStanding", false);
+                    util.SetHoldingFoodMovingAnimation(playerAnimator);
                 }
-                isSetAnimation = true;
+
+                isSetAnimation = false;
             }
+
+            Move();
+
+            isPrevMove = true;
         }
         else
         {
-            if (playerState == PlayerState.Ready)
+            if(isSetAnimation)
             {
-                playerAnimator.SetBool("isMoving", false);
+                if (playerState == PlayerState.Ready)
+                {
+                    util.SetIdleAnimation(playerAnimator);
+                }
+                else if(playerState == PlayerState.PickingFood)
+                {
+                    util.SetIdleAnimation(playerAnimator);
+                }
+                else if (playerState == PlayerState.HoldingFood
+                    || playerState == PlayerState.HoldingFoodMoving
+                    || playerState == PlayerState.PackagingFood
+                    || playerState == PlayerState.PickingPackage
+                    || playerState == PlayerState.PuttingFood
+                    || playerState == PlayerState.HoldingPackageMoving)
+                {
+                    util.SetHoldingFoodStandingAnimation(playerAnimator);
+                }
+
+                isSetAnimation = false;
             }
-            else if (playerState == PlayerState.HoldingFood)
-            {
-                playerAnimator.SetBool("isHoldingFoodStanding", true);
-            }
-            isSetAnimation = false;
+
+            isPrevMove = false;
+        }
+    }
+
+    public void ResetProperties()
+    {
+        util.SetIdleAnimation(playerAnimator);
+
+        numberFoodHold = 0;
+        playerState = PlayerState.Ready;
+    }
+
+    void Move()
+    {
+        Ray cameraRay = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Vector3 pointToLook;
+
+        if (groundPlane.Raycast(cameraRay, out rayLength))
+        {
+            pointToLook = cameraRay.GetPoint(rayLength);
+
+            transform.LookAt(new Vector3(pointToLook.x, 0, pointToLook.z));
+
+            transform.Translate(transform.forward * speed * deltaTime, Space.World);
         }
     }
 }

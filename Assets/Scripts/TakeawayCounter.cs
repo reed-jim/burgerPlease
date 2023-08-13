@@ -26,7 +26,13 @@ public class TakeawayCounter : MonoBehaviour
 
             StartCoroutine(MovePackageOneByOneToTakeawayCounter(npcController));
         }
-       /* else if(other.CompareTag("Car"))
+        else if(other.CompareTag("Player"))
+        {
+            PlayerController controller = other.GetComponent<PlayerController>();
+
+            StartCoroutine(MovePackageOneByOneToTakeawayCounter(controller));
+        }
+        /* else if(other.CompareTag("Car"))
         {
             int carIndex = 0;
 
@@ -75,6 +81,53 @@ public class TakeawayCounter : MonoBehaviour
                 );
 
                 npcController.ResetProperties();
+                simulator.packageStates[i] = PackageState.Putting;
+
+                currentMoved++;
+            }
+
+            if (currentMoved < capacity)
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
+    }
+
+    IEnumerator MovePackageOneByOneToTakeawayCounter(PlayerController playerController)
+    {
+        int capacity = 1;
+        int currentMoved = 0;
+
+        for (int i = 0; i < simulator.packages.Length; i++)
+        {
+            int packageIndex = i;
+
+            if (simulator.packageBelongTo[i] == "player")
+            {
+                simulator.packageBelongTo[i] = "takeawayCounter";
+
+                StartCoroutine(
+                    simulator.CurveMove(
+                        simulator.packages[i].transform,
+                        simulator.packages[i].transform.position,
+                        transform.position
+                        + new Vector3(0,
+                        (simulator.takeawayCounterSize.y + simulator.packageSize.y) / 2,
+                        0),
+                        12,
+                        0,
+                        () =>
+                        {
+                            simulator.packageStates[packageIndex] = PackageState.InTakeawayCounter;
+                        }
+                    )
+                );
+
+                playerController.ResetProperties();
                 simulator.packageStates[i] = PackageState.Putting;
 
                 currentMoved++;

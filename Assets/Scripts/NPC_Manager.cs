@@ -14,7 +14,7 @@ public class NPC_Manager : MonoBehaviour
         npcs = new GameObject[1];
         npcControllers = new HumanController[npcs.Length];
 
-        SpawnNPC();
+        /*SpawnNPC();*/
     }
 
     // Update is called once per frame

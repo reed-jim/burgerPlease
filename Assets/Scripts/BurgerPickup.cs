@@ -74,66 +74,7 @@ public class BurgerPickup : MonoBehaviour
         Debug.Log("burger stove collide with human");
         if (other.gameObject.CompareTag("Player"))
         {
-            if (playerController.playerState == PlayerState.Ready)
-            {
-                int capacity = 2;
-                int numFoodTaken = 0;
-
-                for (int i = 0; i < simulator.foods.Length; i++)
-                {
-                    if (simulator.foodStates[i] == FoodState.Wait)
-                    {
-                        int index = i;
-
-                        if (numFoodTaken == 0)
-                        {
-                            playerController.playerState = PlayerState.PickingFood;
-                        }
-
-                        if (numFoodTaken < capacity)
-                        {
-                            numFoodTaken++;
-                            simulator.foodStates[i] = FoodState.Picking;
-                            simulator.foodBelongTo[i] = "player";
-                            simulator.foodColumnIndex[i] = numFoodTaken - 1;
-
-                            Transform foodTransform = simulator.foods[i].transform;
-                            
-                            StartCoroutine(
-                                simulator.CurveMove
-                                (
-                                   foodTransform,
-                                   foodTransform.position,
-                                   player.transform.position +
-                                   new Vector3(0,
-                                   7 + numFoodTaken * simulator.foodSize.y,
-                                   0) +
-                                   player.transform.forward * 2
-                                   ,
-                                   12,
-                                   0,
-                                   () =>
-                                   {
-                                       simulator.foodStates[index] = FoodState.Delivering;
-
-                                       playerController.numberFoodHold++;
-
-                                       if (playerController.numberFoodHold == 1)
-                                       {
-                                           player.GetComponent<Animator>().SetBool("isHoldingFood", true);
-                                           playerController.playerState = PlayerState.HoldingFood;
-                                       }
-                                   }
-                                )
-                            );
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
+            StartCoroutine(PickupFoodOneByOneByPlayer());
         }
 
         if (other.gameObject.CompareTag("NPC"))
@@ -207,6 +148,77 @@ public class BurgerPickup : MonoBehaviour
                 else
                 {
                     break;
+                }
+            }
+        }
+    }
+
+    IEnumerator PickupFoodOneByOneByPlayer()
+    {
+        if (playerController.playerState == PlayerState.Ready)
+        {
+            int capacity = 2;
+            int numFoodTaken = 0;
+
+            for (int i = simulator.foods.Length - 1; i >= 0; i--)
+            {
+                if (simulator.foodStates[i] == FoodState.Wait)
+                {
+                    int foodIndex = i;
+
+                    if (numFoodTaken == 0)
+                    {
+                        playerController.playerState = PlayerState.PickingFood;
+                    }
+
+                    if (numFoodTaken < capacity)
+                    {
+                        numFoodTaken++;
+                        simulator.foodStates[i] = FoodState.Picking;
+                        simulator.foodBelongTo[i] = "player";
+                        simulator.foodColumnIndex[i] = numFoodTaken - 1;
+
+                        Transform foodTransform = simulator.foods[i].transform;
+
+                        StartCoroutine(
+                            simulator.CurveMove
+                            (
+                               foodTransform,
+                               foodTransform.position,
+                               player.transform.position +
+                               new Vector3(0,
+                               7 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
+                               0) +
+                               player.transform.forward * 2
+                               ,
+                               12,
+                               0,
+                               () =>
+                               {
+                                   simulator.foodStates[foodIndex] = FoodState.Delivering;
+
+                                   playerController.numberFoodHold++;
+
+                                   if(playerController.numberFoodHold == capacity)
+                                   {
+                                       playerController.isSetAnimation = true;
+                                       playerController.playerState = PlayerState.HoldingFoodMoving;
+                                   }
+                                   else if (playerController.numberFoodHold == 1)
+                                   {
+                                       playerController.isSetAnimation = true;
+                                       playerController.playerState = PlayerState.HoldingFood;
+                                   }
+                               }
+                            )
+                        );
+
+                        yield return new WaitForSeconds(0.2f);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
         }

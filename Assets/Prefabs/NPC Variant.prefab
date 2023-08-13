@@ -159,9 +159,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 257512a49eaa1a142ad628ebcbd59819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 20
+  speed: 0.2
   animator: {fileID: 0}
   humanState: 0
+  task: 0
   setOnetimeValues: 1
   id: 
   capacity: 2

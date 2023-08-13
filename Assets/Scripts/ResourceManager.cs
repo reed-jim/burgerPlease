@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ResourceManager : MonoBehaviour
 {
-    public int money = 0;
+    public int money = 1000;
 
     // Start is called before the first frame update
     void Start()
