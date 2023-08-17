@@ -5,6 +5,7 @@ using UnityEngine;
 public class TrashCan : MonoBehaviour
 {
     public Simulator simulator;
+    public PlayerController playerController;
 
     // Start is called before the first frame update
     void Start()
@@ -51,8 +52,10 @@ public class TrashCan : MonoBehaviour
                 simulator.trashStates[i] = TrashState.MovingToTrashCan;
 
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
         }
+
+        playerController.playerState = PlayerState.Ready;
     }
 }

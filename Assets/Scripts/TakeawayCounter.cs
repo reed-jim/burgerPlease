@@ -62,6 +62,7 @@ public class TakeawayCounter : MonoBehaviour
             if (simulator.packageBelongTo[i] == npcController.id)
             {
                 simulator.packageBelongTo[i] = "takeawayCounter";
+                simulator.packageColumnIndex[i] = simulator.numPackageBelongTo("takeawayCounter") - 1;
 
                 StartCoroutine(
                     simulator.CurveMove(
@@ -69,7 +70,8 @@ public class TakeawayCounter : MonoBehaviour
                         simulator.packages[i].transform.position,
                         transform.position
                         + new Vector3(0,
-                        (simulator.takeawayCounterSize.y + simulator.packageSize.y) / 2,
+                        (simulator.takeawayCounterSize.y + simulator.packageSize.y) / 2
+                        + simulator.packageColumnIndex[i] * simulator.packageSize.y,
                         0),
                         12,
                         0,
@@ -109,6 +111,7 @@ public class TakeawayCounter : MonoBehaviour
             if (simulator.packageBelongTo[i] == "player")
             {
                 simulator.packageBelongTo[i] = "takeawayCounter";
+                simulator.packageColumnIndex[i] = simulator.numPackageBelongTo("takeawayCounter") - 1;
 
                 StartCoroutine(
                     simulator.CurveMove(
@@ -116,7 +119,8 @@ public class TakeawayCounter : MonoBehaviour
                         simulator.packages[i].transform.position,
                         transform.position
                         + new Vector3(0,
-                        (simulator.takeawayCounterSize.y + simulator.packageSize.y) / 2,
+                        (simulator.takeawayCounterSize.y + simulator.packageSize.y) / 2
+                        + simulator.packageColumnIndex[i] * simulator.packageSize.y,
                         0),
                         12,
                         0,

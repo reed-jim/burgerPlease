@@ -8,6 +8,8 @@ public enum PlayerState {
     PuttingFood,
     HoldingFood,
     HoldingFoodMoving,
+    HoldingTrash,
+    HoldingTrashMoving,
     PackagingFood,
     PickingPackage,
     HoldingPackageMoving
@@ -27,9 +29,10 @@ public class PlayerController : MonoBehaviour
     Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
     float rayLength;
 
-    private bool isPrevMove = false;
+    private bool prevIsMove = false;
     public bool isSetAnimation = false;
-    public PlayerState playerState = PlayerState.Ready;
+    public PlayerState playerState;
+    private PlayerState prevState;
     public int capacity = 2;
     public int numberFoodHold = 0;
 
@@ -38,6 +41,9 @@ public class PlayerController : MonoBehaviour
     {
         mainCamera = Camera.main;
         deltaTime = Time.deltaTime;
+
+        playerState = PlayerState.Ready;
+        prevState = playerState;
     }
 
     // Update is called once per frame
@@ -45,11 +51,12 @@ public class PlayerController : MonoBehaviour
     {
         bool moveCondition = playerState == PlayerState.Ready
                 || playerState == PlayerState.HoldingFoodMoving
-                || playerState == PlayerState.HoldingPackageMoving;
+                || playerState == PlayerState.HoldingPackageMoving
+                || playerState == PlayerState.HoldingTrashMoving;
 
         bool isMove = Input.GetMouseButton(0) && moveCondition;
 
-        if(isMove != isPrevMove)
+        if(playerState != prevState || isMove != prevIsMove)
         {
             isSetAnimation = true;
         }
@@ -66,7 +73,8 @@ public class PlayerController : MonoBehaviour
                     util.SetMovingAnimation(playerAnimator);
                 }
                 else if(playerState == PlayerState.HoldingFoodMoving
-                    || playerState == PlayerState.HoldingPackageMoving)
+                    || playerState == PlayerState.HoldingPackageMoving
+                    || playerState == PlayerState.HoldingTrashMoving)
                 {
                     util.SetHoldingFoodMovingAnimation(playerAnimator);
                 }
@@ -76,7 +84,7 @@ public class PlayerController : MonoBehaviour
 
             Move();
 
-            isPrevMove = true;
+            prevIsMove = true;
         }
         else
         {
@@ -86,11 +94,12 @@ public class PlayerController : MonoBehaviour
                 {
                     util.SetIdleAnimation(playerAnimator);
                 }
-                else if(playerState == PlayerState.PickingFood)
+                else if (playerState == PlayerState.PickingFood)
                 {
                     util.SetIdleAnimation(playerAnimator);
                 }
                 else if (playerState == PlayerState.HoldingFood
+                    || playerState == PlayerState.HoldingTrash
                     || playerState == PlayerState.HoldingFoodMoving
                     || playerState == PlayerState.PackagingFood
                     || playerState == PlayerState.PickingPackage
@@ -103,8 +112,10 @@ public class PlayerController : MonoBehaviour
                 isSetAnimation = false;
             }
 
-            isPrevMove = false;
+            prevIsMove = false;
         }
+
+        prevState = playerState;
     }
 
     public void ResetProperties()

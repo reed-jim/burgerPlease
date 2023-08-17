@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Wall
+  m_Name: Pave Road
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 2100000, guid: 6a3b49b39026c5646b61caa720ae4382, type: 2}
   m_ModifiedSerializedProperties: 0
@@ -44,6 +44,6 @@ Material:
     - _GlossyReflections: 1
     - _Parallax: 0.02
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.47024804, b: 0, a: 1}
-    - _Color: {r: 1, g: 0.47024804, b: 0, a: 1}
+    - _BaseColor: {r: 0.28040227, g: 0.5566038, b: 0.52101773, a: 1}
+    - _Color: {r: 0.28040227, g: 0.5566038, b: 0.52101773, a: 1}
   m_BuildTextureStacks: []

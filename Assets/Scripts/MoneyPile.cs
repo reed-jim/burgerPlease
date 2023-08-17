@@ -8,14 +8,28 @@ public class MoneyPile : MonoBehaviour
 
     private float deltaTime;
 
+    private Simulator simulator;
     private UI_Manager uiManager;
+    private MoneyPileManager moneyPileManager;
+    public ResourceManager resourceManager;
+
+    private GameObject player;
+
     private int unitValue;
     private int totalMoneyTaken = 0;
+
+    public int index;
 
     // Start is called before the first frame update
     void Start()
     {
+        simulator = GameObject.Find("Simulator").GetComponent<Simulator>();
         uiManager = GameObject.Find("UI_Manager").GetComponent<UI_Manager>();
+        moneyPileManager = GameObject.Find("MoneyPileManager").GetComponent<MoneyPileManager>();
+        resourceManager = GameObject.Find("ResourceManager").GetComponent<ResourceManager>();
+
+        player = GameObject.Find("Player");
+
         deltaTime = Time.deltaTime;
     }
 
@@ -28,6 +42,14 @@ public class MoneyPile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         StartCoroutine(Effect(0));
+
+        StartCoroutine(
+            simulator.TakingMoneyEffect(
+                transform,
+                player.transform,
+                gameObject.activeInHierarchy
+            )
+        );
     }
 
     IEnumerator Effect(int phase)
@@ -51,14 +73,14 @@ public class MoneyPile : MonoBehaviour
                 topFaces[0].transform.position.y,
                 effect.transform.position.z
                 );
-            effect.gameObject.SetActive(true);
-            effect.Play();
+           /* effect.gameObject.SetActive(true);
+            effect.Play();*/
 
             unitValue = ((int)bottom.transform.localScale.y);
-            uiManager.moneyTakenTMP[0].gameObject.transform.position = new Vector3(
-                transform.position.x, transform.position.y + 20, transform.position.z - 10
-                );
-            uiManager.moneyTakenTMP[0].gameObject.SetActive(true);
+            uiManager.moneyTakenTMP[index].gameObject.transform.position = new Vector3(
+                transform.position.x, transform.position.y + 20, transform.position.z - 15
+            );
+            uiManager.moneyTakenTMP[index].gameObject.SetActive(true);
 
             StartCoroutine(Effect(1));
         }
@@ -68,8 +90,7 @@ public class MoneyPile : MonoBehaviour
             {
                 transform.Translate(new Vector3(0, -speed * deltaTime, 0));
 
-                totalMoneyTaken += unitValue;
-                uiManager.moneyTakenTMP[0].text = "$" + totalMoneyTaken;
+                setMoneyTMPs();
 
                 yield return new WaitForSeconds(0.03f);
             }
@@ -91,14 +112,20 @@ public class MoneyPile : MonoBehaviour
                         );
                 }
 
-                totalMoneyTaken += unitValue;
-                uiManager.moneyTakenTMP[0].text = "$" + totalMoneyTaken;
+                setMoneyTMPs();
 
                 yield return new WaitForSeconds(0.03f);
             }
 
-            uiManager.moneyTakenTMP[0].gameObject.SetActive(false);
-            Destroy(gameObject);
+            moneyPileManager.ResetProperties(index);
         }
+    }
+
+    void setMoneyTMPs()
+    {
+        totalMoneyTaken += unitValue;
+        resourceManager.money += unitValue;
+        uiManager.moneyTakenTMP[index].text = "$" + totalMoneyTaken;
+        resourceManager.moneyTMP.text = "$" + resourceManager.money;
     }
 }

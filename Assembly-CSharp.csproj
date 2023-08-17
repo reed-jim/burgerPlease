@@ -59,15 +59,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\HumanController.cs" />
+    <Compile Include="Assets\Scripts\CashierPosition.cs" />
     <Compile Include="Assets\Scripts\ResourceManager.cs" />
     <Compile Include="Assets\Scripts\Package.cs" />
     <Compile Include="Assets\Scripts\NPC_Manager.cs" />
     <Compile Include="Assets\Scripts\TrashCan.cs" />
+    <Compile Include="Assets\Scripts\Material Properties Setter.cs" />
     <Compile Include="Assets\Scripts\Table.cs" />
     <Compile Include="Assets\Scripts\MoneyPile.cs" />
     <Compile Include="Assets\QuickOutline\Scripts\Outline.cs" />
     <Compile Include="Assets\Scripts\PackageTable.cs" />
     <Compile Include="Assets\Scripts\FollowPlayerCamera.cs" />
+    <Compile Include="Assets\Scripts\GameProgressManager.cs" />
     <Compile Include="Assets\Scripts\Util.cs" />
     <Compile Include="Assets\Scripts\UpgradeArea.cs" />
     <Compile Include="Assets\Scripts\MoneyPileManager.cs" />

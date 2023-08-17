@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Util : MonoBehaviour
 {
+    public float deltaScale;
     private float deltaTime;
 
     public delegate void MoveToCallback();
@@ -17,24 +18,20 @@ public class Util : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public IEnumerator MoveTo(Transform tf, Vector3 destination, float speed, MoveToCallback callback)
     {
         tf.LookAt(destination);
-        
+
         while (Vector3.Distance(tf.position, destination) > 10)
         {
-            if(destination.x > 90)
-            {
-                Debug.Log(Vector3.Distance(tf.position, destination));
-            }
             tf.Translate(tf.forward * speed * deltaTime, Space.World);
 
             yield return new WaitForSeconds(0.03f);
         }
-        
+
         callback();
     }
 
@@ -107,5 +104,31 @@ public class Util : MonoBehaviour
     public void preventOnTriggerTwice(Transform tf, Vector3 objectCenter)
     {
         tf.transform.Translate(tf.forward * 1, Space.World);
+    }
+
+    public IEnumerator ScaleEffect(Transform tf, bool isScaleUp, Vector3 expectedScale)
+    {
+        while (true)
+        {
+            if(isScaleUp && tf.localScale.x - expectedScale.x > 0)
+            {
+                break;
+            }
+            if (!isScaleUp && tf.localScale.x - expectedScale.x < 0)
+            {
+                break;
+            }
+
+            if (isScaleUp)
+            {
+                tf.localScale += new Vector3(deltaScale, 0, deltaScale);
+            }
+            else
+            {
+                tf.localScale -= new Vector3(deltaScale, 0, deltaScale);
+            }
+
+            yield return new WaitForSeconds(0.05f);
+        }
     }
 }

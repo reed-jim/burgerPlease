@@ -96,7 +96,7 @@ Material:
     - _DstBlend: 0
     - _Fill: -0.22
     - _FillColor: 0
-    - _FillRate: 1.0074989
+    - _FillRate: -0.5
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -116,6 +116,6 @@ Material:
     m_Colors:
     - _Color: {r: 0.67860603, g: 0, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _EmptyColor: {r: 1, g: 0.99316317, b: 0.4188679, a: 0}
-    - _FillColor: {r: 0.20515352, g: 0.74509805, b: 0.05882353, a: 0}
+    - _EmptyColor: {r: 0.8431373, g: 0.7254902, b: 0.40784317, a: 0}
+    - _FillColor: {r: 0.10980393, g: 0.7725491, b: 0.23137257, a: 0}
   m_BuildTextureStacks: []

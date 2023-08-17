@@ -71,7 +71,6 @@ public class BurgerPickup : MonoBehaviour
     {
         util.preventOnTriggerTwice(other.transform, simulator.foodStorage.transform.position);
 
-        Debug.Log("burger stove collide with human");
         if (other.gameObject.CompareTag("Player"))
         {
             StartCoroutine(PickupFoodOneByOneByPlayer());
@@ -87,8 +86,6 @@ public class BurgerPickup : MonoBehaviour
 
     IEnumerator PickupFoodOneByOne(HumanController controller)
     {
-        controller.animator.SetBool("isMoving", false);
-
         int capacity = controller.capacity;
         int numFoodTaken = controller.numFoodHold;
 
@@ -122,7 +119,7 @@ public class BurgerPickup : MonoBehaviour
                            new Vector3(0,
                            7 + numFoodTaken * simulator.foodSize.y,
                            0) +
-                           controller.gameObject.transform.forward * 2
+                           controller.gameObject.transform.forward * 4
                            ,
                            12,
                            0,
@@ -147,6 +144,8 @@ public class BurgerPickup : MonoBehaviour
                 }
                 else
                 {
+                    simulator.RearrangeFood();
+
                     break;
                 }
             }
@@ -189,7 +188,7 @@ public class BurgerPickup : MonoBehaviour
                                new Vector3(0,
                                7 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
                                0) +
-                               player.transform.forward * 2
+                               player.transform.forward * 4
                                ,
                                12,
                                0,
@@ -217,6 +216,8 @@ public class BurgerPickup : MonoBehaviour
                     }
                     else
                     {
+                        simulator.RearrangeFood();
+
                         break;
                     }
                 }

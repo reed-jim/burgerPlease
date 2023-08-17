@@ -48,11 +48,18 @@ public class PackageTable : MonoBehaviour
 
                 playerController.playerState = PlayerState.PackagingFood;
             }
-            else
+            else if (playerController.playerState == PlayerState.Ready)
             {
-                isContinueCheck = true;
+                if(playerController.gameObject.transform.position.x < transform.position.x)
+                {
+                    PickingPackage(playerController);
+                }
+                else
+                {
+                    isContinueCheck = true;
 
-                StartCoroutine(ContinueCheck(other.transform, playerController));
+                    StartCoroutine(ContinueCheck(other.transform, playerController));
+                }
             }
         }
     }
@@ -87,6 +94,9 @@ public class PackageTable : MonoBehaviour
 
                             if (simulator.foodIndexInPackage[foodIndex] == 3)
                             {
+                                simulator.packageBelongTo[packageIndex] = "package table filled";
+                                simulator.packageColumnIndex[packageIndex] = simulator.numPackageBelongTo("package table filled") - 1;
+
                                 StartCoroutine(
                                     simulator.CurveMove(
                                         simulator.packages[packageIndex].transform,
@@ -95,9 +105,10 @@ public class PackageTable : MonoBehaviour
                                             transform.position.x
                                             - simulator.packageTableSize.x / 4,
                                             transform.position.y
-                                            + (simulator.packageTableSize.y + simulator.packageSize.y) / 2,
+                                            + simulator.packageTableSize.y + simulator.packageSize.y / 2
+                                            + simulator.packageColumnIndex[packageIndex] * simulator.packageSize.y,
                                             transform.position.z
-                                            ),
+                                        ),
                                         12,
                                         0,
                                         () =>
@@ -107,7 +118,7 @@ public class PackageTable : MonoBehaviour
                                                 if (simulator.foodBelongTo[j] == "package" + packageIndex)
                                                 {
                                                     simulator.foods[j].transform.position =
-                                                    simulator. GetFoodPositionInPackage(packageIndex, simulator.foodIndexInPackage[j]);
+                                                    simulator.GetFoodPositionInPackage(packageIndex, simulator.foodIndexInPackage[j]);
                                                     
                                                     simulator.foodStates[j] = FoodState.InPackage;
                                                 }
@@ -192,8 +203,17 @@ public class PackageTable : MonoBehaviour
         {
             if (simulator.packageStates[i] == PackageState.Filled)
             {
-                packageIndex = i;
-                break;
+                if(packageIndex != -1)
+                {
+                    if (simulator.packageColumnIndex[i] > simulator.packageColumnIndex[packageIndex])
+                    {
+                        packageIndex = i;
+                    }
+                }
+                else
+                {
+                    packageIndex = i;
+                }
             }
         }
 

@@ -181,13 +181,13 @@ public class HumanController : MonoBehaviour
             }
         }
 
-        /*for (int i = 0; i < simulator.foods.Length; i++)
+        for (int i = 0; i < simulator.foods.Length; i++)
         {
             if (simulator.foodStates[i] == FoodState.Wait)
             {
                 return Task.ServingFood;
             }
-        }*/
+        }
 
         return Task.Nothing;
     }

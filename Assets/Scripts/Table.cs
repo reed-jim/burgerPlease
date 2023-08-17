@@ -30,20 +30,15 @@ public class Table : MonoBehaviour
                 simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
 
                 simulator.tableStates[index] = TableState.EmptyBoth;
+                player.GetComponent<PlayerController>().playerState = PlayerState.HoldingTrash;
 
-                for (int i = 0; i < simulator.trashs.Length; i++)
-                {
-                    if(simulator.trashBelongTo[i] == "table" + index)
-                    {
-                        StartCoroutine(
-                                simulator.moveTrashOneByOne(
-                                    "player",
-                                    player.transform,
-                                    index
-                                )
-                        );
-                    }
-                }
+                StartCoroutine(
+                    simulator.moveTrashOneByOne(
+                        "player",
+                        player.transform,
+                        index
+                    )
+                );
             }
         }
     }
