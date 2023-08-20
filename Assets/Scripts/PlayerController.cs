@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public enum PlayerState {
     Ready,
@@ -17,6 +18,8 @@ public enum PlayerState {
 
 public class PlayerController : MonoBehaviour
 {
+    public TMP_Text maxCapacityTMP;
+
     public Simulator simulator;
     public Util util;
     public Animator playerAnimator;
@@ -44,6 +47,8 @@ public class PlayerController : MonoBehaviour
 
         playerState = PlayerState.Ready;
         prevState = playerState;
+
+        StartCoroutine(ShowMaxCapacityText());
     }
 
     // Update is called once per frame
@@ -138,6 +143,28 @@ public class PlayerController : MonoBehaviour
             transform.LookAt(new Vector3(pointToLook.x, 0, pointToLook.z));
 
             transform.Translate(transform.forward * speed * deltaTime, Space.World);
+        }
+    }
+
+    public IEnumerator ShowMaxCapacityText()
+    {
+        while(true)
+        {
+            if(numberFoodHold == capacity)
+            {
+                if (!maxCapacityTMP.gameObject.activeInHierarchy)
+                {
+                    maxCapacityTMP.gameObject.SetActive(true);
+                }
+
+                maxCapacityTMP.gameObject.transform.position = transform.position + new Vector3(0, 18, 0);
+            }
+            else
+            {
+                maxCapacityTMP.gameObject.SetActive(false);
+            }
+
+            yield return new WaitForSeconds(0.000f);
         }
     }
 }

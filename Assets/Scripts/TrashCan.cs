@@ -6,11 +6,12 @@ public class TrashCan : MonoBehaviour
 {
     public Simulator simulator;
     public PlayerController playerController;
+    private Vector3 trashSize;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        trashSize = GetComponent<MeshRenderer>().bounds.size;
     }
 
     // Update is called once per frame
@@ -23,7 +24,10 @@ public class TrashCan : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            StartCoroutine(MoveTrashOneByOneToTrashCan());
+            if(playerController.playerState == PlayerState.HoldingTrashMoving)
+            {
+                StartCoroutine(MoveTrashOneByOneToTrashCan());
+            }
         }
     }
 
@@ -39,7 +43,7 @@ public class TrashCan : MonoBehaviour
                     simulator.CurveMove(
                         simulator.trashs[i].transform,
                         simulator.trashs[i].transform.position,
-                        transform.position,
+                        transform.position + new Vector3(0, trashSize.y, 0),
                         12,
                         0,
                         () =>

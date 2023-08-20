@@ -13,6 +13,7 @@ public class BurgerPickup : MonoBehaviour
 {
     public GameObject player;
     public Simulator simulator;
+    public GameProgressManager gameProgressManager;
     private Util util;
     public PlayerController playerController;
     public float speed = 5f;
@@ -119,7 +120,7 @@ public class BurgerPickup : MonoBehaviour
                            new Vector3(0,
                            7 + numFoodTaken * simulator.foodSize.y,
                            0) +
-                           controller.gameObject.transform.forward * 4
+                           controller.gameObject.transform.forward * 12
                            ,
                            12,
                            0,
@@ -200,12 +201,15 @@ public class BurgerPickup : MonoBehaviour
 
                                    if(playerController.numberFoodHold == capacity)
                                    {
-                                       playerController.isSetAnimation = true;
+                                       if(gameProgressManager.progressStep == ProgressStep.PickupFoodTutorial)
+                                       {
+                                           gameProgressManager.progressStep = ProgressStep.PutFoodOnCounterTutorialStart;
+                                       }
+
                                        playerController.playerState = PlayerState.HoldingFoodMoving;
                                    }
                                    else if (playerController.numberFoodHold == 1)
                                    {
-                                       playerController.isSetAnimation = true;
                                        playerController.playerState = PlayerState.HoldingFood;
                                    }
                                }

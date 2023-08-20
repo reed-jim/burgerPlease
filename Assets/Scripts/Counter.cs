@@ -5,6 +5,7 @@ using UnityEngine;
 public class Counter : MonoBehaviour
 {
     public Simulator simulator;
+    public GameProgressManager gameProgressManager;
     public PlayerController playerController;
 
     // Start is called before the first frame update
@@ -70,6 +71,11 @@ public class Counter : MonoBehaviour
                         }
                         if (playerController.numberFoodHold == 0)
                         {
+                            if(gameProgressManager.progressStep == ProgressStep.PutFoodOnCounterTutorial)
+                            {
+                                gameProgressManager.progressStep = ProgressStep.CashierTutorialStart;
+                            }
+                            
                             playerController.playerState = PlayerState.Ready;
                         }
 

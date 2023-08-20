@@ -50,7 +50,7 @@ public class PackageTable : MonoBehaviour
             }
             else if (playerController.playerState == PlayerState.Ready)
             {
-                if(playerController.gameObject.transform.position.x < transform.position.x)
+                if (playerController.gameObject.transform.position.x < transform.position.x)
                 {
                     PickingPackage(playerController);
                 }
@@ -103,11 +103,11 @@ public class PackageTable : MonoBehaviour
                                         simulator.packages[packageIndex].transform.position,
                                         new Vector3(
                                             transform.position.x
-                                            - simulator.packageTableSize.x / 4,
+                                            + simulator.packageSize.x / 2 + 0.1f * simulator.packageTableSize.x,
                                             transform.position.y
                                             + simulator.packageTableSize.y + simulator.packageSize.y / 2
                                             + simulator.packageColumnIndex[packageIndex] * simulator.packageSize.y,
-                                            transform.position.z
+                                            transform.position.z + simulator.packageTableSize.z / 2
                                         ),
                                         12,
                                         0,
@@ -119,7 +119,7 @@ public class PackageTable : MonoBehaviour
                                                 {
                                                     simulator.foods[j].transform.position =
                                                     simulator.GetFoodPositionInPackage(packageIndex, simulator.foodIndexInPackage[j]);
-                                                    
+
                                                     simulator.foodStates[j] = FoodState.InPackage;
                                                 }
                                             }
@@ -165,9 +165,9 @@ public class PackageTable : MonoBehaviour
 
     IEnumerator ContinueCheck(Transform tf, PlayerController playerController)
     {
-        while(isContinueCheck)
+        while (isContinueCheck)
         {
-            if(tf.position.x < transform.position.x + 0.25f * simulator.packageTableSize.x)
+            if (tf.position.x < transform.position.x + 0.25f * simulator.packageTableSize.x)
             {
                 PickingPackage(playerController);
 
@@ -203,7 +203,7 @@ public class PackageTable : MonoBehaviour
         {
             if (simulator.packageStates[i] == PackageState.Filled)
             {
-                if(packageIndex != -1)
+                if (packageIndex != -1)
                 {
                     if (simulator.packageColumnIndex[i] > simulator.packageColumnIndex[packageIndex])
                     {
@@ -224,7 +224,7 @@ public class PackageTable : MonoBehaviour
     {
         int packageIndex = GetFilledPackageIndex();
 
-        if(packageIndex != -1)
+        if (packageIndex != -1)
         {
             if (controller.playerState == PlayerState.Ready)
             {

@@ -75,6 +75,7 @@
     <Compile Include="Assets\Scripts\UpgradeArea.cs" />
     <Compile Include="Assets\Scripts\MoneyPileManager.cs" />
     <Compile Include="Assets\Scripts\UI_Manager.cs" />
+    <Compile Include="Assets\Scripts\Gate.cs" />
     <Compile Include="Assets\Scripts\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Counter.cs" />
     <Compile Include="Assets\Scripts\Simulator.cs" />

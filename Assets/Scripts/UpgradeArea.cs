@@ -52,6 +52,9 @@ public class UpgradeArea : MonoBehaviour
     {
         isInside = true;
 
+        valueInEachTime = (int)(requireValue / 20);
+        fillRateSpeed = ((float)valueInEachTime / requireValue) * FILL_RATE_RANGE;
+
         StartCoroutine(
            simulator.PuttingMoneyEffect(
                player.transform,
@@ -60,7 +63,7 @@ public class UpgradeArea : MonoBehaviour
            )
         );
 
-        StartCoroutine(util.ScaleEffect(transform, true, 1.2f * initialScale));
+        StartCoroutine(util.ScaleEffect(transform, true, 1.15f * initialScale));
 
         simulator.tutorialArrow.SetActive(false);
     }
@@ -89,18 +92,26 @@ public class UpgradeArea : MonoBehaviour
 
                     resourceManager.money -= valueInEachTime;
                     remainRequireValue -= valueInEachTime;
-                    simulator.upgradeMoneyTMPs[index].text = remainRequireValue.ToString();
-                    moneyTMP.text = "$" + resourceManager.money;
+                    simulator.upgradeMoneyTMPs[index].text = util.ToShortFormNumber(remainRequireValue);
+                    moneyTMP.text = "$" + util.ToShortFormNumber(resourceManager.money);
                 }
 
-                yield return new WaitForSeconds(0.05f);
+                yield return new WaitForSeconds(0.04f);
             }
             else
             {
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.3f);
             }
         }
 
         OnUpgraded();
+    }
+
+    public void SetNewRequireValue(int value)
+    {
+        requireValue = value;
+        remainRequireValue = requireValue;
+
+        fillRateSpeed = ((float)valueInEachTime / requireValue) * FILL_RATE_RANGE;
     }
 }
