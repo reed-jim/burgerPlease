@@ -37,8 +37,6 @@ public class GameProgressManager : MonoBehaviour
 
     void Start()
     {
-        util = GameObject.Find("Util").GetComponent<Util>();
-
         if (isEnableTutorial)
         {
             StartCoroutine(Progressing());
@@ -71,7 +69,7 @@ public class GameProgressManager : MonoBehaviour
             }
             else if(progressStep == ProgressStep.PickupFoodTutorialStart)
             {
-                simulator.SpawnTutorialArrow(simulator.foodStorage.transform.position);
+                simulator.SpawnTutorialArrow(simulator.foodStorages[0].transform.position);
                 util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Pick up food!");
 
                 progressStep = ProgressStep.PickupFoodTutorial;
@@ -101,7 +99,7 @@ public class GameProgressManager : MonoBehaviour
 
                 yield return new WaitForSeconds(1.5f);
 
-                simulator.tutorialTextBackground.parent.gameObject.SetActive(false);
+                simulator.tutorialTextBackground.gameObject.SetActive(false);
 
                 progressStep = ProgressStep.DoneBasic;
             }
@@ -117,12 +115,12 @@ public class GameProgressManager : MonoBehaviour
                         int y = (i - i % col) / col;
 
                         simulator.SpawnUpgradeArea(
-                                new Vector3(
-                                    simulator.tables[0].transform.position.x + x * 60,
-                                    0,
-                                    simulator.tables[0].transform.position.z - y * 40
-                                ),
-                                UpgradeAreaFunction.CreateTable
+                            new Vector3(
+                                simulator.tables[0].transform.position.x + x * 60,
+                                0,
+                                simulator.tables[0].transform.position.z - y * 40
+                            ),
+                            UpgradeAreaFunction.CreateTable
                         );
 
                         break;

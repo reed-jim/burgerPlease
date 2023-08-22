@@ -13,10 +13,11 @@ public class UpgradeArea : MonoBehaviour
     public ResourceManager resourceManager;
     public Util util;
 
+    public AudioSource puttingMoneySound;
+
     public MeshRenderer meshRenderer;
     public Material material;
     public MaterialPropertyBlock propertyBlock;
-    public ParticleSystem particleSystem;
     public Vector3 initialScale;
 
     public float fillRate = -0.5f;
@@ -38,8 +39,6 @@ public class UpgradeArea : MonoBehaviour
     {
         meshRenderer = GetComponent<MeshRenderer>();
         propertyBlock = new MaterialPropertyBlock();
-
-        particleSystem = transform.GetChild(0).GetComponent<ParticleSystem>();
 
         initialScale = transform.localScale;
 
@@ -65,13 +64,13 @@ public class UpgradeArea : MonoBehaviour
 
         StartCoroutine(util.ScaleEffect(transform, true, 1.15f * initialScale));
 
+        puttingMoneySound.Play();
+
         simulator.tutorialArrow.SetActive(false);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        particleSystem.gameObject.SetActive(false);
-
         isInside = false;
 
         StartCoroutine(util.ScaleEffect(transform, false, initialScale));
@@ -86,7 +85,6 @@ public class UpgradeArea : MonoBehaviour
                 if (resourceManager.money > valueInEachTime)
                 {
                     fillRate += fillRateSpeed;
-                    /*material.SetFloat("_FillRate", fillRate);*/
                     propertyBlock.SetFloat("_FillRate", fillRate);
                     meshRenderer.SetPropertyBlock(propertyBlock);
 
@@ -94,6 +92,10 @@ public class UpgradeArea : MonoBehaviour
                     remainRequireValue -= valueInEachTime;
                     simulator.upgradeMoneyTMPs[index].text = util.ToShortFormNumber(remainRequireValue);
                     moneyTMP.text = "$" + util.ToShortFormNumber(resourceManager.money);
+                    moneyTMP.rectTransform.sizeDelta =
+                        new Vector2(moneyTMP.preferredWidth, moneyTMP.preferredHeight);
+                    simulator.moneyBackground.sizeDelta =
+                        new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);
                 }
 
                 yield return new WaitForSeconds(0.04f);
@@ -113,5 +115,21 @@ public class UpgradeArea : MonoBehaviour
         remainRequireValue = requireValue;
 
         fillRateSpeed = ((float)valueInEachTime / requireValue) * FILL_RATE_RANGE;
+    }
+
+    public void SetSizeEqualTo(Vector3 targetSize, Vector3 targetScale)
+    {
+        Vector3 ratio = Vector3.one;
+        
+        ratio.x = meshRenderer.bounds.size.x / targetSize.x;
+        ratio.z = meshRenderer.bounds.size.z / targetSize.z;
+
+        transform.localScale = new Vector3(
+            transform.localScale.x / ratio.x,
+            transform.localScale.y,
+            transform.localScale.z / ratio.z
+        );
+
+        initialScale = transform.localScale;
     }
 }

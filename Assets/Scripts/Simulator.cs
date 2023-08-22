@@ -43,6 +43,12 @@ public enum TableState
     Dirty
 }
 
+public enum StoveState
+{
+    NotSpawn,
+    Active
+}
+
 public enum PackageState
 {
     NotSpawn,
@@ -94,6 +100,13 @@ public enum UpgradeAreaFunction
     CreateTakeawayCounter
 }
 
+public enum DirectionArrowState
+{
+    NotSpawn,
+    Set,
+    Directing
+}
+
 public class Simulator : MonoBehaviour
 {
     public GameObject customerPrefab;
@@ -107,24 +120,33 @@ public class Simulator : MonoBehaviour
 
     public GameObject player;
     public GameObject gate;
-    public GameObject stove;
     public GameObject counter;
+    public GameObject baseStove;
     public GameObject cashierPosition;
     public GameObject bowl;
-    public GameObject foodStorage;
     public GameObject packageTable;
     public GameObject takeawayCounter;
     public GameObject tutorialArrow;
+    public GameObject directionArrow;
 
     public GameObject customerDialog;
     public GameObject noSeatDialog;
     public GameObject loadGameScreen;
+    public GameObject loadGameScreenBackground;
     public GameObject loadBar;
     public GameObject loadBarEmpty;
     public TMP_Text tutorialText;
     public RectTransform tutorialTextBackground;
+    public GameObject happyEmoji;
+    public GameObject[] happyEmojis;
+    public TMP_Text baseCapacityTMP;
+    public TMP_Text[] maxCapacityTMPs;
+    public TMP_Text moneyTMP;
+    public RectTransform moneyBackground;
 
     public GameObject[] tables;
+    public GameObject[] stoves;
+    public GameObject[] foodStorages;
     public GameObject[] customers = new GameObject[10];
     public GameObject[] foods = new GameObject[36];
     public GameObject[] packages = new GameObject[10];
@@ -145,12 +167,16 @@ public class Simulator : MonoBehaviour
     public PlayerController playerController;
     public Util util;
     public GameProgressManager gameProgressManager;
+    public ResourceManager resourceManager;
+    public FollowPlayerCamera cameraScript;
+    private MaterialPropertyBlock propertyBlock;
 
     public GameObject loadBackground;
     public GameObject customerSectionFloor;
     public GameObject staffSectionFloor;
 
 
+    public AudioSource upgradeCompleteSound;
 
 
     public CustomerState[] customerStates;
@@ -159,6 +185,8 @@ public class Simulator : MonoBehaviour
     public string[] foodBelongTo;
     public int[] foodColumnIndex;
     public TableState[] tableStates;
+    public StoveState[] foodStorageStates;
+    public int[] numFoodOfStorage;
     public string[] customerTableMap;
     public CarState[] carStates;
     public PackageState[] packageStates;
@@ -170,10 +198,13 @@ public class Simulator : MonoBehaviour
     public TrashState[] trashStates;
     public string[] trashBelongTo;
     public int[] trashColumnIndex;
+    public DirectionArrowState directionArrowState;
+
 
     public int firstQueueCustomerIndex = 0;
 
 
+    public Vector3 stoveSize;
     public Vector3 counterSize;
     public Vector3 foodSize;
     public Vector3 tableSize;
@@ -187,9 +218,42 @@ public class Simulator : MonoBehaviour
     public delegate void CurveMoveCallback();
     public delegate void SpawnUpgradeAreaCallback();
 
+    void SetUISize()
+    {
+        RectTransform loadBarEmptyRT = loadBarEmpty.GetComponent<RectTransform>();
+        RectTransform loadBarRT = loadBar.GetComponent<RectTransform>();
+
+        loadGameScreen.GetComponent<RectTransform>().sizeDelta =
+            new Vector2(Screen.currentResolution.width, Screen.currentResolution.height);
+        loadGameScreenBackground.GetComponent<RectTransform>().sizeDelta =
+            new Vector2(Screen.currentResolution.width, Screen.currentResolution.height);
+
+        moneyTMP.rectTransform.sizeDelta =
+            new Vector2(moneyTMP.preferredWidth, moneyTMP.preferredHeight);
+        moneyBackground.sizeDelta = 
+            new Vector2(1.1f * moneyTMP.preferredWidth, 1.1f * moneyTMP.preferredHeight);
+        moneyBackground.anchoredPosition = new Vector3(
+            -0.5f * moneyBackground.sizeDelta.x - 0.05f * Screen.currentResolution.width,
+            -0.5f * moneyBackground.sizeDelta.y - 0.05f * Screen.currentResolution.width,
+            0
+        );
+
+        loadBarEmptyRT.sizeDelta =
+            new Vector2(0.8f * Screen.currentResolution.width, 0.03f * Screen.currentResolution.height);
+        loadBarRT.sizeDelta =
+            new Vector2(0.8f * Screen.currentResolution.width, 0.03f * Screen.currentResolution.height);
+        loadBarEmptyRT.anchoredPosition = new Vector3(0, 3f * loadBarEmptyRT.sizeDelta.y, 0);
+        loadBarRT.anchoredPosition = new Vector3(0, 3f * loadBarRT.sizeDelta.y, 0);
+
+        tutorialTextBackground.anchoredPosition = new Vector3(0, -4 * tutorialTextBackground.sizeDelta.y, 0);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
+        SetUISize();
+        propertyBlock = new MaterialPropertyBlock();
+
         foodBelongTo = new string[foods.Length];
         foodColumnIndex = new int[foods.Length];
         foodStates = new FoodState[foods.Length];
@@ -201,6 +265,10 @@ public class Simulator : MonoBehaviour
 
         tableStates = new TableState[tables.Length];
         chairs = new GameObject[tables.Length * 2];
+
+        foodStorages = new GameObject[stoves.Length];
+        foodStorageStates = new StoveState[stoves.Length];
+        numFoodOfStorage = new int[stoves.Length];
 
         trashStates = new TrashState[trashs.Length];
         trashBelongTo = new string[trashs.Length];
@@ -216,6 +284,7 @@ public class Simulator : MonoBehaviour
         upgradeAreaStates = new UpgradeAreaState[upgradeAreas.Length];
         upgradeAreaFunctions = new UpgradeAreaFunction[upgradeAreas.Length];
         upgradeMoneyTMPs = new TMP_Text[upgradeAreas.Length];
+        maxCapacityTMPs = new TMP_Text[foodStorages.Length];
 
         deltaTime = Time.deltaTime;
         /*customerSectionFloor.GetComponent<MeshRenderer>().material.color =
@@ -228,6 +297,10 @@ public class Simulator : MonoBehaviour
         for (int i = 0; i < customers.Length; i++)
         {
             customers[i] = Instantiate(customerPrefab);
+
+            propertyBlock.SetColor("_BaseColor", new Color(200 / 255f, 200 / 255f, 200 / 255f));
+            customers[i].transform.GetChild(0).GetComponent<SkinnedMeshRenderer>().SetPropertyBlock(propertyBlock);
+
             customers[i].SetActive(false);
             customerStates[i] = CustomerState.NotSpawn;
             customerTableMap[i] = "none";
@@ -274,6 +347,20 @@ public class Simulator : MonoBehaviour
             chairs[2 * i + 1] = tables[i].transform.GetChild(2).gameObject;
         }
 
+        for (int i = 0; i < stoves.Length; i++)
+        {
+            stoves[i] = Instantiate(baseStove);
+            stoves[i].SetActive(false);
+            foodStorages[i] = stoves[i].transform.GetChild(0).gameObject;
+            foodStorageStates[i] = StoveState.NotSpawn;
+            numFoodOfStorage[i] = 0;
+            foodStorages[i].GetComponent<BurgerPickup>().stoveIndex = i;
+
+            maxCapacityTMPs[i] = Instantiate(baseCapacityTMP, baseCapacityTMP.rectTransform.parent);
+            maxCapacityTMPs[i].gameObject.SetActive(false);
+        }
+        Destroy(baseStove);
+
         for (int i = 0; i < upgradeAreas.Length; i++)
         {
             upgradeAreas[i] = Instantiate(upgradeArea);
@@ -306,8 +393,26 @@ public class Simulator : MonoBehaviour
             trashColumnIndex[i] = -1;
         }
 
+        for (int i = 0; i < happyEmojis.Length; i++)
+        {
+            happyEmojis[i] = Instantiate(happyEmoji, happyEmoji.transform.parent);
+            happyEmojis[i].SetActive(false);
+
+            if (i == happyEmojis.Length - 1)
+            {
+                Destroy(happyEmoji);
+            }
+        }
+
+        directionArrowState = DirectionArrowState.NotSpawn;
 
 
+
+        stoveSize = new Vector3(
+            stoves[0].GetComponent<MeshRenderer>().bounds.size.x,
+            stoves[0].GetComponent<MeshRenderer>().bounds.size.y,
+            stoves[0].GetComponent<MeshRenderer>().bounds.size.z + foodStorages[0].GetComponent<MeshRenderer>().bounds.size.z
+        );
         counterSize = counter.GetComponent<MeshRenderer>().bounds.size;
         for (int i = 0; i < foods[0].transform.childCount; i++)
         {
@@ -341,11 +446,12 @@ public class Simulator : MonoBehaviour
         trashSize = trashs[0].GetComponent<MeshRenderer>().bounds.size;
 
         StartCoroutine(LoadGame());
+        StartCoroutine(DirectPlayer());
 
         if (!gameProgressManager.isEnableTutorial || gameProgressManager.progressStep != ProgressStep.CreateGate)
         {
             StartCoroutine(SpawnCustomer());
-            StartCoroutine(SpawnFood());
+            StartCoroutine(SpawnFood(0));
             StartCoroutine(SpawnPackage());
             StartCoroutine(SpawnCar());
             /*StartCoroutine(SpawnUpgradeArea());*/
@@ -357,6 +463,8 @@ public class Simulator : MonoBehaviour
             StartCoroutine(SimulateTrashCycle());
         }
     }
+
+
 
     IEnumerator SimulateCustomerCycle()
     {
@@ -695,7 +803,7 @@ public class Simulator : MonoBehaviour
                         carNextToIndex = cars.Length - 1;
                     }
 
-                    
+
 
                     if (carStates[carNextToIndex] == CarState.NotSpawn ||
                         cars[carNextToIndex].transform.position.z < 100)
@@ -714,7 +822,7 @@ public class Simulator : MonoBehaviour
                             cars[i].transform.position.z
                         );
                     }
-           
+
                     cars[i].transform.LookAt(nextPositions[i]);
 
                     carStates[i] = CarState.GoToMainLane;
@@ -752,7 +860,7 @@ public class Simulator : MonoBehaviour
                     }
 
 
-                    if(carStates[carNextToIndex] == CarState.NotSpawn || carStates[carNextToIndex] == CarState.Done)
+                    if (carStates[carNextToIndex] == CarState.NotSpawn || carStates[carNextToIndex] == CarState.Done)
                     {
                         nextPositions[i] = new Vector3(
                             takeawayCounter.transform.position.x - 3 * takeawayCounterSize.x,
@@ -841,7 +949,7 @@ public class Simulator : MonoBehaviour
 
                     if (cars[i].transform.position.z > 160)
                     {
-                        if(carStates[carNextToIndex] != CarState.Waiting)
+                        if (carStates[carNextToIndex] != CarState.Waiting)
                         {
                             carStates[i] = CarState.SetDirection;
                         }
@@ -894,6 +1002,8 @@ public class Simulator : MonoBehaviour
         }
     }
 
+
+
     IEnumerator SpawnCustomer()
     {
         while (true)
@@ -919,31 +1029,44 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    IEnumerator SpawnFood()
+    IEnumerator SpawnFood(int stoveIndex)
     {
         while (true)
         {
             for (int i = 0; i < foods.Length; i++)
             {
+                if (numFoodOfStorage[stoveIndex] >= resourceManager.stoveCapacities[stoveIndex])
+                {
+                    maxCapacityTMPs[stoveIndex].transform.position =
+                        foodStorages[stoveIndex].transform.position + new Vector3(0, 15, 0);
+                    maxCapacityTMPs[stoveIndex].gameObject.SetActive(true);
+                    break;
+                }
+
                 if (foodStates[i] == FoodState.NotSpawn)
                 {
                     int row = 1;
                     int col = 2;
                     int numFoodPerLayer = col * row;
 
-                    Vector3 foodDeliverSize = foodStorage.GetComponent<MeshRenderer>().bounds.size;
+                    foodColumnIndex[i] = numFoodHoldOf("storage" + stoveIndex);
+
+                    Vector3 foodDeliverSize = foodStorages[stoveIndex].GetComponent<MeshRenderer>().bounds.size;
                     int x = (foodColumnIndex[i] % numFoodPerLayer) % col;
                     int z = ((foodColumnIndex[i] % numFoodPerLayer) - x) / col;
                     int y = (foodColumnIndex[i] - foodColumnIndex[i] % numFoodPerLayer) / numFoodPerLayer;
 
                     foods[i].transform.position = new Vector3(
-                        foodStorage.transform.position.x - foodDeliverSize.x / 2 + (x + 1) * foodDeliverSize.x / (col + 1),
-                        foodStorage.transform.position.y + foodDeliverSize.y / 2 + y * foodSize.y,
-                        foodStorage.transform.position.z + foodDeliverSize.z / 2 - (z + 1) * foodDeliverSize.z / (row + 1)
+                        foodStorages[stoveIndex].transform.position.x - foodDeliverSize.x / 2 + (x + 1) * foodDeliverSize.x / (col + 1),
+                        foodStorages[stoveIndex].transform.position.y + foodDeliverSize.y / 2 + y * foodSize.y,
+                        foodStorages[stoveIndex].transform.position.z + foodDeliverSize.z / 2 - (z + 1) * foodDeliverSize.z / (row + 1)
                     );
 
                     foods[i].SetActive(true);
+
+                    foodBelongTo[i] = "storage" + stoveIndex;
                     foodStates[i] = FoodState.Wait;
+                    numFoodOfStorage[stoveIndex]++;
 
                     break;
                 }
@@ -968,7 +1091,7 @@ public class Simulator : MonoBehaviour
                 cars[nextIndex].SetActive(true);
                 carStates[nextIndex] = CarState.SetDirection;
 
-                if(nextIndex < cars.Length - 1)
+                if (nextIndex < cars.Length - 1)
                 {
                     nextIndex++;
                 }
@@ -1137,19 +1260,112 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    IEnumerator SpawnPackage()
+    {
+        while (true)
+        {
+            bool isSpawn = true;
+            int spawnIndex = -1;
+
+            for (int i = 0; i < packages.Length; i++)
+            {
+                if (packageStates[i] == PackageState.Filling)
+                {
+                    isSpawn = false;
+                    break;
+                }
+
+                if (packageStates[i] == PackageState.NotSpawn && spawnIndex == -1)
+                {
+                    spawnIndex = i;
+                }
+            }
+
+            if (isSpawn)
+            {
+                packages[spawnIndex].transform.position = new Vector3(
+                    packageTable.transform.position.x + 0.9f * packageTableSize.x - packageSize.x / 2,
+                    packageTable.transform.position.y + packageTableSize.y + packageSize.y / 2,
+                    packageTable.transform.position.z + packageTableSize.z / 2
+                );
+
+                packages[spawnIndex].SetActive(true);
+
+                packageBelongTo[spawnIndex] = "package table";
+                packageStates[spawnIndex] = PackageState.Filling;
+            }
+
+            yield return new WaitForSeconds(0.05f);
+        }
+    }
+
+    public void SpawnEmoji(Vector3 spawnPosition)
+    {
+        for (int i = 0; i < happyEmojis.Length; i++)
+        {
+            if (!happyEmojis[i].activeInHierarchy)
+            {
+                happyEmojis[i].transform.position = spawnPosition
+                    + new Vector3(0, 25, 0);
+
+                happyEmojis[i].SetActive(true);
+
+                StartCoroutine(util.RotateSlowly(happyEmojis[i].transform));
+
+                break;
+            }
+        }
+    }
+
+    void SpawnTrash(Vector3 position, string belongTo)
+    {
+        int currentHighestIndex = trashColumnIndex.Max();
+        int newIndex = currentHighestIndex;
+        int numSpawn = 0;
+
+        for (int i = 0; i < trashs.Length; i++)
+        {
+            if (trashStates[i] == TrashState.NotSpawn)
+            {
+                newIndex++;
+
+                trashBelongTo[i] = belongTo;
+                trashColumnIndex[i] = newIndex;
+
+                trashs[i].transform.position = position +
+                    new Vector3(
+                        0,
+                        (trashColumnIndex[i] + 0.5f) * trashSize.y,
+                        0
+                    );
+
+                trashs[i].SetActive(true);
+
+                numSpawn++;
+            }
+            if (numSpawn > 1)
+            {
+                break;
+            }
+        }
+    }
+
+
+
     void OnGateCreated()
     {
         SpawnGate();
 
-        upgradeAreas[0].transform.localScale = new Vector3(
-            18,
-            upgradeAreas[0].transform.localScale.y,
-            18
-        );
-        upgradeAreas[0].GetComponent<UpgradeArea>().
-               initialScale = upgradeAreas[0].transform.localScale;
+        upgradeCompleteSound.Play();
+
+        SpawnEmoji(player.transform.position);
+
+        cameraScript.cameraState = CameraState.ZoomStart;
 
         ResetUpgradeAreaProperties(0);
+
+        upgradeAreaScripts[0].SetSizeEqualTo(new Vector3(2 * tableSize.x, 1, tableSize.z),
+            tables[0].transform.localScale);
 
         util.SetTMPTextOnBackground(tutorialText, tutorialTextBackground, "Create a table!");
 
@@ -1161,24 +1377,30 @@ public class Simulator : MonoBehaviour
         SpawnUpgradeArea(spawnPosition, UpgradeAreaFunction.CreateFirstTable, 200);
 
         gameProgressManager.progressStep = ProgressStep.CreateFirstTable;
+        directionArrowState = DirectionArrowState.Set;
     }
 
     void OnFirstTableCreated()
     {
         SpawnFirstTable();
 
+        upgradeCompleteSound.Play();
+
         ResetUpgradeAreaProperties(0);
+
+        upgradeAreaScripts[0].SetSizeEqualTo(stoveSize, counter.transform.localScale);
 
         util.SetTMPTextOnBackground(tutorialText, tutorialTextBackground, "Create food machine!");
 
         Vector3 spawnPosition = new Vector3(
-            stove.transform.position.x,
+            stoves[0].transform.position.x,
             0,
-            stove.transform.position.z
+            stoves[0].transform.position.z
         );
         SpawnUpgradeArea(spawnPosition, UpgradeAreaFunction.CreateStove, 1000);
 
         gameProgressManager.progressStep = ProgressStep.CreateStove;
+        directionArrowState = DirectionArrowState.Set;
     }
 
     void OnTableUpgraded(int upgradeAreaIndex)
@@ -1190,12 +1412,15 @@ public class Simulator : MonoBehaviour
 
     void OnStoveCreated()
     {
-        stove.SetActive(true);
-        foodStorage.SetActive(true);
-        StartCoroutine(util.ScaleUpDownEffect(stove.transform, 0.2f));
-        StartCoroutine(util.ScaleUpDownEffect(foodStorage.transform, 0.2f));
+        stoves[0].SetActive(true);
+        StartCoroutine(util.ScaleUpDownEffect(stoves[0].transform, 0.2f));
+        StartCoroutine(util.ScaleUpDownEffect(foodStorages[0].transform, 0.2f));
+
+        upgradeCompleteSound.Play();
 
         ResetUpgradeAreaProperties(0);
+
+        upgradeAreaScripts[0].SetSizeEqualTo(counterSize, counter.transform.localScale);
 
         util.SetTMPTextOnBackground(tutorialText, tutorialTextBackground, "Create a counter!");
 
@@ -1207,6 +1432,7 @@ public class Simulator : MonoBehaviour
         SpawnUpgradeArea(spawnPosition, UpgradeAreaFunction.CreateCounter, 200);
 
         gameProgressManager.progressStep = ProgressStep.CreateCounter;
+        directionArrowState = DirectionArrowState.Set;
     }
 
     void OnCounterCreated()
@@ -1214,17 +1440,20 @@ public class Simulator : MonoBehaviour
         counter.SetActive(true);
         StartCoroutine(util.ScaleUpDownEffect(counter.transform, 0.2f));
 
+        upgradeCompleteSound.Play();
+
         ResetUpgradeAreaProperties(0);
 
 
         StartCoroutine(SpawnCustomer());
-        StartCoroutine(SpawnFood());
+        StartCoroutine(SpawnFood(0));
 
         StartCoroutine(SimulateCustomerCycle());
         StartCoroutine(SimulateFoodCycle());
         StartCoroutine(SimulateTrashCycle());
 
         gameProgressManager.progressStep = ProgressStep.PickupFoodTutorialStart;
+        directionArrowState = DirectionArrowState.Set;
     }
 
     void OnPackageTableUpgraded(int upgradeAreaIndex)
@@ -1249,259 +1478,7 @@ public class Simulator : MonoBehaviour
         ResetUpgradeAreaProperties(upgradeAreaIndex);
     }
 
-    IEnumerator Eat(int customerIndex)
-    {
-        while (customerStates[customerIndex] != CustomerState.Leaving)
-        {
-            yield return new WaitForSeconds(7f);
 
-            customers[customerIndex].transform.position = new Vector3(
-                customers[customerIndex].transform.position.x,
-                0,
-                customers[customerIndex].transform.position.z
-            );
-
-            customers[customerIndex].transform.LookAt(new Vector3(
-                customers[customerIndex].transform.position.x,
-                customers[customerIndex].transform.position.y, -30
-            ));
-
-            int tableIndex = int.Parse(customerTableMap[customerIndex][5].ToString());
-            string tableSeat = customerTableMap[customerIndex].Substring(7);
-
-
-            for (int j = 0; j < foods.Length; j++)
-            {
-                if (foodBelongTo[j] == "customer" + customerIndex + "-table" + tableIndex)
-                {
-                    resetFoodProperties(j);
-                }
-            }
-
-            RearrangeFood();
-
-
-
-            customerTableMap[customerIndex] = "";
-
-            Vector3 tablePosition = tables[tableIndex].transform.position;
-
-            bool isDirty = true;
-
-            // check if anyone else is in the table
-            for (int i = 0; i < customers.Length; i++)
-            {
-                if (customerTableMap[i] == "customer" + i + "-table" + tableIndex)
-                {
-                    isDirty = false;
-                    break;
-                }
-            }
-
-            if (isDirty)
-            {
-                SpawnTrash(
-                    new Vector3(tablePosition.x + tableSize.x / 2,
-                    tablePosition.y + tableSize.y,
-                    tablePosition.z + tableSize.z / 2),
-                    "table" + tableIndex
-                );
-
-                RotateChairs(tableIndex, new Vector3(0, 30, 0), new Vector3(0, 210, 0));
-
-                tableStates[tableIndex] = TableState.Dirty;
-            }
-
-
-            moneyPileManager.SpawnMoneyPile(
-                new Vector3(
-                    tables[tableIndex].transform.position.x,
-                    0,
-                    tables[tableIndex].transform.position.z + tableSize.z + 10
-                ),
-                tableIndex
-            );
-
-            util.SetMovingAnimation(customers[customerIndex].GetComponent<Animator>());
-            customerStates[customerIndex] = CustomerState.Leaving;
-        }
-    }
-
-    int FindCustomerIndex(CustomerState condition)
-    {
-        for (int i = 0; i < customers.Length; i++)
-        {
-            if (customerStates[i] == condition)
-            {
-                return i;
-            }
-        }
-
-        return 0;
-    }
-
-    void setNewFirstQueueCustomerIndex()
-    {
-        if (firstQueueCustomerIndex < customers.Length - 1)
-        {
-            firstQueueCustomerIndex++;
-        }
-        else
-        {
-            firstQueueCustomerIndex = 0;
-        }
-    }
-
-    public IEnumerator CurveMove(Transform tf, Vector3 start, Vector3 end,
-        float height, int phase, CurveMoveCallback callback)
-    {
-        Vector3 midPoint = (start + end) / 2;
-        Vector3 top = new Vector3(midPoint.x, midPoint.y + height, midPoint.z);
-        Vector3 direction = Vector3.zero;
-        bool isDirectionSet = false;
-        bool isDeltaDistanceSet = false;
-
-        Vector3 prevDistance = Vector3.positiveInfinity;
-        Vector3 deltaDistance = Vector3.zero;
-
-        while (true)
-        {
-            Vector3 from = Vector3.zero;
-            Vector3 to = Vector3.zero;
-
-            if (!isDirectionSet)
-            {
-                direction = phase == 0 ? top - tf.position : end - tf.position;
-                isDirectionSet = true;
-            }
-
-            if (phase == 0)
-            {
-                from = tf.position;
-                to = top;
-            }
-            else if (phase == 1)
-            {
-                from = tf.position;
-                to = end;
-            }
-
-            Vector3 distance;
-
-            distance.x = Mathf.Abs(from.x - to.x);
-            distance.y = Mathf.Abs(from.y - to.y);
-            distance.z = Mathf.Abs(from.z - to.z);
-
-            if (!isDeltaDistanceSet)
-            {
-                deltaDistance = distance / 10f;
-
-                deltaDistance.x = direction.x > 0 ? deltaDistance.x : -deltaDistance.x;
-                deltaDistance.y = direction.y > 0 ? deltaDistance.y : -deltaDistance.y;
-                deltaDistance.z = direction.z > 0 ? deltaDistance.z : -deltaDistance.z;
-
-                isDeltaDistanceSet = true;
-            }
-
-            bool condition0 = true;
-            bool condition1 = true;
-            bool condition2 = true;
-
-            /*         if(distance.x > 1.5f * deltaDistance.x)
-                     {
-                         tf.Translate(deltaDistance, Space.World);
-                     }
-                     else
-                     {
-                         condition0 = false;
-                         condition1 = false;
-                         condition2 = false;
-                     }*/
-
-            if (distance.x > 1f * deltaDistance.x && distance.x < prevDistance.x)
-            {
-                tf.Translate(new Vector3(deltaDistance.x, 0, 0));
-            }
-            else
-            {
-                condition0 = false;
-            }
-
-            if (distance.y > 1f * deltaDistance.y && distance.y < prevDistance.y)
-            {
-                tf.Translate(new Vector3(0, deltaDistance.y, 0));
-            }
-            else
-            {
-                condition1 = false;
-            }
-
-            if (distance.z > 1f * deltaDistance.z && distance.z < prevDistance.z)
-            {
-                tf.Translate(new Vector3(0, 0, deltaDistance.z));
-            }
-            else
-            {
-                condition2 = false;
-            }
-
-            prevDistance = distance;
-
-            if (!condition0 && !condition1 && !condition2)
-            {
-                if (phase == 0)
-                {
-                    phase++;
-                    prevDistance = Vector3.positiveInfinity;
-                    isDirectionSet = false;
-                    isDeltaDistanceSet = false;
-                }
-                else if (phase == 1)
-                {
-                    break;
-                }
-            }
-
-            yield return new WaitForSeconds(0.02f);
-        }
-
-        tf.position = end;
-
-        callback();
-    }
-
-    void setCustomerMoving(int index, bool isMoving)
-    {
-        util.SetMovingAnimation(customers[index].GetComponent<Animator>());
-    }
-
-    public int numFoodHoldOf(string ownerName, bool isContain = false)
-    {
-        int num = 0;
-
-        for (int i = 0; i < foodBelongTo.Length; i++)
-        {
-            if (!isContain && foodBelongTo[i] == ownerName)
-            {
-                num++;
-            }
-
-            if (isContain && foodBelongTo[i].Contains(ownerName))
-            {
-                num++;
-            }
-        }
-
-        return num;
-    }
-
-    void resetFoodProperties(int index)
-    {
-        foods[index].SetActive(false);
-        foodBelongTo[index] = "storage";
-        foodColumnIndex[index] = -1;
-        foodStates[index] = FoodState.NotSpawn;
-    }
 
     public IEnumerator moveFoodOneByOneToCustomer(Transform customerTf, int customerIndex)
     {
@@ -1643,259 +1620,6 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    public void ResetPackageProperties(int index)
-    {
-        packages[index].SetActive(false);
-        packageBelongTo[index] = "none";
-        packageStates[index] = PackageState.NotSpawn;
-    }
-
-    public void ResetCarProperties(int index)
-    {
-        cars[index].SetActive(false);
-        carStates[index] = CarState.NotSpawn;
-    }
-
-    public void resetTrashProperties(int index)
-    {
-        trashs[index].SetActive(false);
-        trashBelongTo[index] = "none";
-        trashColumnIndex[index] = -1;
-        trashStates[index] = TrashState.NotSpawn;
-    }
-
-    public void ResetUpgradeAreaProperties(int index)
-    {
-        UpgradeArea upgradeAreaScript = upgradeAreas[index].GetComponent<UpgradeArea>();
-
-        upgradeAreas[index].transform.localScale = upgradeAreaScript.initialScale;
-        upgradeAreas[index].SetActive(false);
-        upgradeMoneyTMPs[index].gameObject.SetActive(false);
-        upgradeAreaScript.particleSystem.gameObject.SetActive(false);
-        tutorialArrow.SetActive(false);
-
-        upgradeAreaScript.remainRequireValue = upgradeAreaScript.requireValue;
-        upgradeAreaScript.isInside = false;
-        upgradeAreaScript.fillRate = -0.5f;
-        upgradeAreaScript.propertyBlock.SetFloat("_FillRate", upgradeAreaScript.fillRate);
-        upgradeAreaScript.meshRenderer.SetPropertyBlock(upgradeAreaScript.propertyBlock);
-
-        upgradeMoneyTMPs[index].text = upgradeAreaScript.requireValue.ToString();
-
-        upgradeAreaStates[index] = UpgradeAreaState.NotSpawn;
-        upgradeAreaFunctions[index] = UpgradeAreaFunction.None;
-    }
-
-    public int numFoodAvailableForCustomer()
-    {
-        int num = 0;
-
-        for (int i = 0; i < foods.Length; i++)
-        {
-            if (foodStates[i] == FoodState.CustomerPick)
-            {
-                num++;
-            }
-        }
-
-        return num;
-    }
-
-    void arrangeFoodYPosition(float minYPos, string ownerName, bool isContain = false)
-    {
-        int newIndex = -1;
-        bool isBelongTo;
-
-        for (int i = 0; i < foods.Length; i++)
-        {
-            isBelongTo = false;
-
-            if (!isContain && foodBelongTo[i] == ownerName)
-            {
-                isBelongTo = true;
-            }
-            if (isContain && foodBelongTo[i].Contains(ownerName))
-            {
-                isBelongTo = true;
-            }
-
-            foodColumnIndex[i] = newIndex;
-
-            if (isBelongTo)
-            {
-                newIndex++;
-                foodColumnIndex[i] = newIndex;
-
-                foods[i].transform.position = new Vector3(
-                    foods[i].transform.position.x,
-                    minYPos + foodColumnIndex[i] * foodSize.y,
-                    foods[i].transform.position.z);
-            }
-        }
-    }
-
-    public void RotateChairs(int tableIndex, Vector3 angle1, Vector3 angle2)
-    {
-        StartCoroutine(util.RotateOverTime(
-            chairs[2 * tableIndex].transform,
-            angle1
-            ));
-
-        StartCoroutine(util.RotateOverTime(
-            chairs[2 * tableIndex + 1].transform,
-            angle2
-            ));
-    }
-
-    void SpawnTrash(Vector3 position, string belongTo)
-    {
-        int currentHighestIndex = trashColumnIndex.Max();
-        int newIndex = currentHighestIndex;
-        int numSpawn = 0;
-
-        for (int i = 0; i < trashs.Length; i++)
-        {
-            if (trashStates[i] == TrashState.NotSpawn)
-            {
-                newIndex++;
-
-                trashBelongTo[i] = belongTo;
-                trashColumnIndex[i] = newIndex;
-
-                trashs[i].transform.position = position +
-                    new Vector3(
-                        0,
-                        (trashColumnIndex[i] + 0.5f) * trashSize.y,
-                        0
-                    );
-
-                trashs[i].SetActive(true);
-
-                numSpawn++;
-            }
-            if (numSpawn > 1)
-            {
-                break;
-            }
-        }
-    }
-
-    int FindLastTrashIndexBelongTo(string owner)
-    {
-        int last = -1;
-
-        for (int i = 0; i < trashs.Length; i++)
-        {
-            if (trashBelongTo[i] == owner)
-            {
-                last = Mathf.Max(last, trashColumnIndex[i]);
-            }
-        }
-
-        return last;
-    }
-
-    IEnumerator SpawnPackage()
-    {
-        while (true)
-        {
-            bool isSpawn = true;
-            int spawnIndex = -1;
-
-            for (int i = 0; i < packages.Length; i++)
-            {
-                if (packageStates[i] == PackageState.Filling)
-                {
-                    isSpawn = false;
-                    break;
-                }
-
-                if (packageStates[i] == PackageState.NotSpawn && spawnIndex == -1)
-                {
-                    spawnIndex = i;
-                }
-            }
-
-            if (isSpawn)
-            {
-                packages[spawnIndex].transform.position = new Vector3(
-                    packageTable.transform.position.x + 0.9f * packageTableSize.x - packageSize.x / 2,
-                    packageTable.transform.position.y + packageTableSize.y + packageSize.y / 2,
-                    packageTable.transform.position.z + packageTableSize.z / 2
-                );
-
-                packages[spawnIndex].SetActive(true);
-
-                packageBelongTo[spawnIndex] = "package table";
-                packageStates[spawnIndex] = PackageState.Filling;
-            }
-
-            yield return new WaitForSeconds(0.05f);
-        }
-    }
-
-    public Vector3 GetFoodPositionInPackage(int packageIndex, int fillIndex)
-    {
-        int j = fillIndex % 2;
-        int i = (fillIndex - j) / 2;
-
-        return new Vector3(
-            packages[packageIndex].transform.position.x
-            - packageSize.x / 2 + (j + 1) * packageSize.x / (2 + 1),
-            packages[packageIndex].transform.position.y + packageSize.y / 2,
-            packages[packageIndex].transform.position.z
-            + packageSize.z / 2 - (i + 1) * packageSize.z / (2 + 1)
-        );
-    }
-
-    public int numFillOfPackage(int packageIndex)
-    {
-        int num = 0;
-
-        for (int i = 0; i < foods.Length; i++)
-        {
-            if (foodBelongTo[i] == "package" + packageIndex)
-            {
-                num++;
-            }
-        }
-
-        return num;
-    }
-
-    IEnumerator LoadGame()
-    {
-        RectTransform loadBarRT = loadBar.GetComponent<RectTransform>();
-        RectTransform loadBarEmptyRT = loadBarEmpty.GetComponent<RectTransform>();
-
-        while (loadBarRT.localScale.x < loadBarEmptyRT.localScale.x)
-        {
-            loadBarRT.localScale += new Vector3(0.015f, 0, 0);
-            loadBarRT.localPosition = new Vector3(
-                loadBarEmptyRT.localPosition.x - loadBarEmptyRT.rect.width / 2
-                + loadBarRT.rect.width * loadBarRT.localScale.x / 2,
-                loadBarRT.localPosition.y,
-                loadBarRT.localPosition.z
-            );
-
-            yield return new WaitForSeconds(0.02f);
-        }
-
-        tutorialText.gameObject.SetActive(true);
-        tutorialTextBackground.gameObject.SetActive(true);
-
-        loadGameScreen.SetActive(false);
-    }
-
-    void DisableUpgradeArea(int index)
-    {
-        upgradeAreas[index].SetActive(false);
-        upgradeMoneyTMPs[index].gameObject.SetActive(false);
-
-        upgradeAreaStates[index] = UpgradeAreaState.NotSpawn;
-        upgradeAreaFunctions[index] = UpgradeAreaFunction.None;
-    }
-
     IEnumerator MoveFoodOneByOneToTable(int customerIndex, int tableIndex)
     {
         customers[customerIndex].GetComponent<Animator>().SetBool("isMoving", false);
@@ -1935,12 +1659,142 @@ public class Simulator : MonoBehaviour
         customerStates[customerIndex] = CustomerState.Eating;
     }
 
+
+
+
+    void resetFoodProperties(int index)
+    {
+        foods[index].SetActive(false);
+        foodBelongTo[index] = "storage";
+        foodColumnIndex[index] = -1;
+        foodStates[index] = FoodState.NotSpawn;
+    }
+
+    public void ResetPackageProperties(int index)
+    {
+        packages[index].SetActive(false);
+        packageBelongTo[index] = "none";
+        packageStates[index] = PackageState.NotSpawn;
+    }
+
+    public void ResetCarProperties(int index)
+    {
+        cars[index].SetActive(false);
+        carStates[index] = CarState.NotSpawn;
+    }
+
+    public void resetTrashProperties(int index)
+    {
+        trashs[index].SetActive(false);
+        trashBelongTo[index] = "none";
+        trashColumnIndex[index] = -1;
+        trashStates[index] = TrashState.NotSpawn;
+    }
+
+    public void ResetUpgradeAreaProperties(int index)
+    {
+        UpgradeArea upgradeAreaScript = upgradeAreas[index].GetComponent<UpgradeArea>();
+
+        upgradeAreas[index].transform.localScale = upgradeAreaScript.initialScale;
+        upgradeAreas[index].SetActive(false);
+        upgradeMoneyTMPs[index].gameObject.SetActive(false);
+        tutorialArrow.SetActive(false);
+
+        upgradeAreaScript.remainRequireValue = upgradeAreaScript.requireValue;
+        upgradeAreaScript.isInside = false;
+        upgradeAreaScript.fillRate = -0.5f;
+        upgradeAreaScript.propertyBlock.SetFloat("_FillRate", upgradeAreaScript.fillRate);
+        upgradeAreaScript.meshRenderer.SetPropertyBlock(upgradeAreaScript.propertyBlock);
+
+        upgradeMoneyTMPs[index].text = upgradeAreaScript.requireValue.ToString();
+
+        upgradeAreaStates[index] = UpgradeAreaState.NotSpawn;
+        upgradeAreaFunctions[index] = UpgradeAreaFunction.None;
+    }
+
+
+
+    public int numFoodHoldOf(string ownerName, bool isContain = false)
+    {
+        int num = 0;
+
+        for (int i = 0; i < foodBelongTo.Length; i++)
+        {
+            if (!isContain && foodBelongTo[i] == ownerName)
+            {
+                num++;
+            }
+
+            if (isContain && foodBelongTo[i].Contains(ownerName))
+            {
+                num++;
+            }
+        }
+
+        return num;
+    }
+
+    public int numFoodAvailableForCustomer()
+    {
+        int num = 0;
+
+        for (int i = 0; i < foods.Length; i++)
+        {
+            if (foodStates[i] == FoodState.CustomerPick)
+            {
+                num++;
+            }
+        }
+
+        return num;
+    }
+
+    public int numFillOfPackage(int packageIndex)
+    {
+        int num = 0;
+
+        for (int i = 0; i < foods.Length; i++)
+        {
+            if (foodBelongTo[i] == "package" + packageIndex)
+            {
+                num++;
+            }
+        }
+
+        return num;
+    }
+
+    public int numPackageBelongTo(string owner)
+    {
+        int num = 0;
+
+        for (int i = 0; i < packages.Length; i++)
+        {
+            if (packageBelongTo[i] == owner)
+            {
+                num++;
+            }
+        }
+
+        return num;
+    }
+
+
+
+    void DisableUpgradeArea(int index)
+    {
+        upgradeAreas[index].SetActive(false);
+        upgradeMoneyTMPs[index].gameObject.SetActive(false);
+
+        upgradeAreaStates[index] = UpgradeAreaState.NotSpawn;
+        upgradeAreaFunctions[index] = UpgradeAreaFunction.None;
+    }
+
     public void DisableObjectsForCreateGateStep()
     {
         gate.SetActive(false);
-        stove.SetActive(false);
+        stoves[0].SetActive(false);
         counter.SetActive(false);
-        foodStorage.SetActive(false);
         packageTable.SetActive(false);
         takeawayCounter.SetActive(false);
 
@@ -1958,6 +1812,8 @@ public class Simulator : MonoBehaviour
             array[i].SetActive(false);
         }
     }
+
+
 
     public IEnumerator TakingMoneyEffect(Transform fromTf, Transform toTf,
         bool condition)
@@ -2069,7 +1925,9 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    public void RearrangeFood()
+
+
+    /*public void RearrangeFood(int stoveIndex)
     {
         int newPositionIndex = -1;
 
@@ -2085,15 +1943,15 @@ public class Simulator : MonoBehaviour
                 int col = 2;
                 int numFoodPerLayer = col * row;
 
-                Vector3 foodDeliverSize = foodStorage.GetComponent<MeshRenderer>().bounds.size;
+                Vector3 foodDeliverSize = foodStorages[stoveIndex].GetComponent<MeshRenderer>().bounds.size;
                 int x = (newPositionIndex % numFoodPerLayer) % col;
                 int z = ((newPositionIndex % numFoodPerLayer) - x) / col;
                 int y = (newPositionIndex - newPositionIndex % numFoodPerLayer) / numFoodPerLayer;
 
                 foods[i].transform.position = new Vector3(
-                    foodStorage.transform.position.x - foodDeliverSize.x / 2 + (x + 1) * foodDeliverSize.x / (col + 1),
-                    foodStorage.transform.position.y + foodDeliverSize.y / 2 + y * foodSize.y,
-                    foodStorage.transform.position.z + foodDeliverSize.z / 2 - (z + 1) * foodDeliverSize.z / (row + 1)
+                    foodStorages[stoveIndex].transform.position.x - foodDeliverSize.x / 2 + (x + 1) * foodDeliverSize.x / (col + 1),
+                    foodStorages[stoveIndex].transform.position.y + foodDeliverSize.y / 2 + y * foodSize.y,
+                    foodStorages[stoveIndex].transform.position.z + foodDeliverSize.z / 2 - (z + 1) * foodDeliverSize.z / (row + 1)
                 );
             }
         }
@@ -2107,7 +1965,9 @@ public class Simulator : MonoBehaviour
                 foodColumnIndex[i] = newPositionIndex;
             }
         }
-    }
+    }*/
+
+
 
     IEnumerator TutorialArrowEffect()
     {
@@ -2146,18 +2006,418 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    public int numPackageBelongTo(string owner)
+    public IEnumerator DirectPlayer()
     {
-        int num = 0;
+        bool isFirstTime = true;
+        Vector3 nextPoint = Vector3.zero;
 
-        for (int i = 0; i < packages.Length; i++)
+        while (true)
         {
-            if (packageBelongTo[i] == owner)
+            if (directionArrowState == DirectionArrowState.Set)
             {
-                num++;
+                if (!directionArrow.activeInHierarchy)
+                {
+                    if (isFirstTime)
+                    {
+                        yield return new WaitForSeconds(2f);
+
+                        isFirstTime = false;
+                    }
+
+                    directionArrow.SetActive(true);
+                }
+
+                if (gameProgressManager.progressStep == ProgressStep.CreateFirstTable)
+                {
+                    nextPoint = tables[0].transform.position + new Vector3(0, 10, 0);
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.CreateStove)
+                {
+                    nextPoint = stoves[0].transform.position + new Vector3(0, 10, 0);
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.CreateCounter)
+                {
+                    nextPoint = counter.transform.position + new Vector3(0, 10, 0);
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.PickupFoodTutorialStart)
+                {
+                    Destroy(directionArrow);
+                    break;
+                }
+
+                directionArrowState = DirectionArrowState.Directing;
+            }
+            else if (directionArrowState == DirectionArrowState.Directing)
+            {
+                if (Vector3.Distance(player.transform.position, nextPoint) > 50)
+                {
+                    if (!directionArrow.activeInHierarchy)
+                    {
+                        directionArrow.SetActive(true);
+                    }
+
+                    directionArrow.transform.position = player.transform.position + new Vector3(0, 25, 0);
+                    directionArrow.transform.LookAt(nextPoint);
+
+                    directionArrow.transform.eulerAngles += new Vector3(75, 0, 0);
+                }
+                else
+                {
+                    if (directionArrow.activeInHierarchy)
+                    {
+                        directionArrow.SetActive(false);
+                    }
+                }
+            }
+
+            yield return new WaitForSeconds(0.01f);
+        }
+    }
+
+    IEnumerator Eat(int customerIndex)
+    {
+        while (customerStates[customerIndex] != CustomerState.Leaving)
+        {
+            yield return new WaitForSeconds(4f);
+
+            int happyEmojiIndex = 0;
+
+            for (int i = 0; i < happyEmojis.Length; i++)
+            {
+                if (!happyEmojis[i].activeInHierarchy)
+                {
+                    happyEmojis[i].transform.position = customers[customerIndex].transform.position
+                        + new Vector3(0, 20, 0);
+
+                    happyEmojis[i].SetActive(true);
+
+                    StartCoroutine(util.RotateSlowly(happyEmojis[i].transform));
+
+                    happyEmojiIndex = i;
+                    break;
+                }
+            }
+
+            yield return new WaitForSeconds(3f);
+
+            customers[customerIndex].transform.position = new Vector3(
+                customers[customerIndex].transform.position.x,
+                0,
+                customers[customerIndex].transform.position.z
+            );
+
+            customers[customerIndex].transform.LookAt(new Vector3(
+                customers[customerIndex].transform.position.x,
+                customers[customerIndex].transform.position.y, -30
+            ));
+
+            happyEmojis[happyEmojiIndex].SetActive(false);
+
+            int tableIndex = int.Parse(customerTableMap[customerIndex][5].ToString());
+            string tableSeat = customerTableMap[customerIndex].Substring(7);
+
+
+            for (int j = 0; j < foods.Length; j++)
+            {
+                if (foodBelongTo[j] == "customer" + customerIndex + "-table" + tableIndex)
+                {
+                    resetFoodProperties(j);
+                }
+            }
+
+            /*RearrangeFood();*/
+
+
+
+            customerTableMap[customerIndex] = "";
+
+            Vector3 tablePosition = tables[tableIndex].transform.position;
+
+            bool isDirty = true;
+
+            // check if anyone else is in the table
+            for (int i = 0; i < customers.Length; i++)
+            {
+                if (customerTableMap[i] == "customer" + i + "-table" + tableIndex)
+                {
+                    isDirty = false;
+                    break;
+                }
+            }
+
+            if (isDirty)
+            {
+                SpawnTrash(
+                    new Vector3(tablePosition.x + tableSize.x / 2,
+                    tablePosition.y + tableSize.y,
+                    tablePosition.z + tableSize.z / 2),
+                    "table" + tableIndex
+                );
+
+                RotateChairs(tableIndex, new Vector3(0, 30, 0), new Vector3(0, 210, 0));
+
+                tableStates[tableIndex] = TableState.Dirty;
+            }
+
+
+            moneyPileManager.SpawnMoneyPile(
+                new Vector3(
+                    tables[tableIndex].transform.position.x,
+                    0,
+                    tables[tableIndex].transform.position.z + tableSize.z + 10
+                ),
+                tableIndex
+            );
+
+            util.SetMovingAnimation(customers[customerIndex].GetComponent<Animator>());
+            customerStates[customerIndex] = CustomerState.Leaving;
+        }
+    }
+
+    int FindCustomerIndex(CustomerState condition)
+    {
+        for (int i = 0; i < customers.Length; i++)
+        {
+            if (customerStates[i] == condition)
+            {
+                return i;
             }
         }
 
-        return num;
+        return 0;
+    }
+
+    void setNewFirstQueueCustomerIndex()
+    {
+        if (firstQueueCustomerIndex < customers.Length - 1)
+        {
+            firstQueueCustomerIndex++;
+        }
+        else
+        {
+            firstQueueCustomerIndex = 0;
+        }
+    }
+
+    public IEnumerator CurveMove(Transform tf, Vector3 start, Vector3 end,
+        float height, int phase, CurveMoveCallback callback)
+    {
+        Vector3 midPoint = (start + end) / 2;
+        Vector3 top = new Vector3(midPoint.x, midPoint.y + height, midPoint.z);
+        Vector3 direction = Vector3.zero;
+        bool isDirectionSet = false;
+        bool isDeltaDistanceSet = false;
+
+        Vector3 prevDistance = Vector3.positiveInfinity;
+        Vector3 deltaDistance = Vector3.zero;
+
+        while (true)
+        {
+            Vector3 from = Vector3.zero;
+            Vector3 to = Vector3.zero;
+
+            if (!isDirectionSet)
+            {
+                direction = phase == 0 ? top - tf.position : end - tf.position;
+                isDirectionSet = true;
+            }
+
+            if (phase == 0)
+            {
+                from = tf.position;
+                to = top;
+            }
+            else if (phase == 1)
+            {
+                from = tf.position;
+                to = end;
+            }
+
+            Vector3 distance;
+
+            distance.x = Mathf.Abs(from.x - to.x);
+            distance.y = Mathf.Abs(from.y - to.y);
+            distance.z = Mathf.Abs(from.z - to.z);
+
+            if (!isDeltaDistanceSet)
+            {
+                deltaDistance = distance / 8f;
+
+                deltaDistance.x = direction.x > 0 ? deltaDistance.x : -deltaDistance.x;
+                deltaDistance.y = direction.y > 0 ? deltaDistance.y : -deltaDistance.y;
+                deltaDistance.z = direction.z > 0 ? deltaDistance.z : -deltaDistance.z;
+
+                isDeltaDistanceSet = true;
+            }
+
+            bool condition0 = true;
+            bool condition1 = true;
+            bool condition2 = true;
+
+            /*         if(distance.x > 1.5f * deltaDistance.x)
+                     {
+                         tf.Translate(deltaDistance, Space.World);
+                     }
+                     else
+                     {
+                         condition0 = false;
+                         condition1 = false;
+                         condition2 = false;
+                     }*/
+
+            if (distance.x > 1f * deltaDistance.x && distance.x < prevDistance.x)
+            {
+                tf.Translate(new Vector3(deltaDistance.x, 0, 0));
+            }
+            else
+            {
+                condition0 = false;
+            }
+
+            if (distance.y > 1f * deltaDistance.y && distance.y < prevDistance.y)
+            {
+                tf.Translate(new Vector3(0, deltaDistance.y, 0));
+            }
+            else
+            {
+                condition1 = false;
+            }
+
+            if (distance.z > 1f * deltaDistance.z && distance.z < prevDistance.z)
+            {
+                tf.Translate(new Vector3(0, 0, deltaDistance.z));
+            }
+            else
+            {
+                condition2 = false;
+            }
+
+            prevDistance = distance;
+
+            if (!condition0 && !condition1 && !condition2)
+            {
+                if (phase == 0)
+                {
+                    phase++;
+                    prevDistance = Vector3.positiveInfinity;
+                    isDirectionSet = false;
+                    isDeltaDistanceSet = false;
+                }
+                else if (phase == 1)
+                {
+                    break;
+                }
+            }
+
+            yield return new WaitForSeconds(0.02f);
+        }
+
+        tf.position = end;
+
+        callback();
+    }
+
+    void setCustomerMoving(int index, bool isMoving)
+    {
+        util.SetMovingAnimation(customers[index].GetComponent<Animator>());
+    }
+
+    void arrangeFoodYPosition(float minYPos, string ownerName, bool isContain = false)
+    {
+        int newIndex = -1;
+        bool isBelongTo;
+
+        for (int i = 0; i < foods.Length; i++)
+        {
+            isBelongTo = false;
+
+            if (!isContain && foodBelongTo[i] == ownerName)
+            {
+                isBelongTo = true;
+            }
+            if (isContain && foodBelongTo[i].Contains(ownerName))
+            {
+                isBelongTo = true;
+            }
+
+            foodColumnIndex[i] = newIndex;
+
+            if (isBelongTo)
+            {
+                newIndex++;
+                foodColumnIndex[i] = newIndex;
+
+                foods[i].transform.position = new Vector3(
+                    foods[i].transform.position.x,
+                    minYPos + foodColumnIndex[i] * foodSize.y,
+                    foods[i].transform.position.z);
+            }
+        }
+    }
+
+    public void RotateChairs(int tableIndex, Vector3 angle1, Vector3 angle2)
+    {
+        StartCoroutine(util.RotateOverTime(
+            chairs[2 * tableIndex].transform,
+            angle1
+            ));
+
+        StartCoroutine(util.RotateOverTime(
+            chairs[2 * tableIndex + 1].transform,
+            angle2
+            ));
+    }
+
+    int FindLastTrashIndexBelongTo(string owner)
+    {
+        int last = -1;
+
+        for (int i = 0; i < trashs.Length; i++)
+        {
+            if (trashBelongTo[i] == owner)
+            {
+                last = Mathf.Max(last, trashColumnIndex[i]);
+            }
+        }
+
+        return last;
+    }
+
+    public Vector3 GetFoodPositionInPackage(int packageIndex, int fillIndex)
+    {
+        int j = fillIndex % 2;
+        int i = (fillIndex - j) / 2;
+
+        return new Vector3(
+            packages[packageIndex].transform.position.x
+            - packageSize.x / 2 + (j + 1) * packageSize.x / (2 + 1),
+            packages[packageIndex].transform.position.y + packageSize.y / 2,
+            packages[packageIndex].transform.position.z
+            + packageSize.z / 2 - (i + 1) * packageSize.z / (2 + 1)
+        );
+    }
+
+    IEnumerator LoadGame()
+    {
+        RectTransform loadBarRT = loadBar.GetComponent<RectTransform>();
+        RectTransform loadBarEmptyRT = loadBarEmpty.GetComponent<RectTransform>();
+
+        while (loadBarRT.localScale.x < loadBarEmptyRT.localScale.x)
+        {
+            loadBarRT.localScale += new Vector3(0.015f, 0, 0);
+            loadBarRT.localPosition = new Vector3(
+                loadBarEmptyRT.localPosition.x - loadBarEmptyRT.rect.width / 2
+                + loadBarRT.rect.width * loadBarRT.localScale.x / 2,
+                loadBarRT.localPosition.y,
+                loadBarRT.localPosition.z
+            );
+
+            yield return new WaitForSeconds(0.02f);
+        }
+
+        tutorialText.gameObject.SetActive(true);
+        tutorialTextBackground.gameObject.SetActive(true);
+
+        loadGameScreen.SetActive(false);
     }
 }

@@ -16,17 +16,16 @@ public class BurgerPickup : MonoBehaviour
     public GameProgressManager gameProgressManager;
     private Util util;
     public PlayerController playerController;
-    public float speed = 5f;
-    public Vector3 minDistance;
 
-    private float deltaTime;
+    public float speed = 5f;
+
+    public int stoveIndex;
+
 
     // Start is called before the first frame update
     void Start()
     {
         util = GameObject.Find("Util").GetComponent<Util>();
-
-        deltaTime = Time.deltaTime;
     }
 
     // Update is called once per frame
@@ -70,7 +69,7 @@ public class BurgerPickup : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        util.preventOnTriggerTwice(other.transform, simulator.foodStorage.transform.position);
+        util.preventOnTriggerTwice(other.transform, simulator.foodStorages[stoveIndex].transform.position);
 
         if (other.gameObject.CompareTag("Player"))
         {
@@ -120,7 +119,7 @@ public class BurgerPickup : MonoBehaviour
                            new Vector3(0,
                            7 + numFoodTaken * simulator.foodSize.y,
                            0) +
-                           controller.gameObject.transform.forward * 12
+                           controller.gameObject.transform.forward * 8
                            ,
                            12,
                            0,
@@ -129,6 +128,8 @@ public class BurgerPickup : MonoBehaviour
                                simulator.foodStates[foodIndex] = FoodState.Delivering;
 
                                controller.numFoodHold++;
+                               simulator.numFoodOfStorage[stoveIndex]--;
+                               simulator.maxCapacityTMPs[stoveIndex].gameObject.SetActive(false);
 
                                if (controller.numFoodHold == 2)
                                {
@@ -145,7 +146,7 @@ public class BurgerPickup : MonoBehaviour
                 }
                 else
                 {
-                    simulator.RearrangeFood();
+                    /*simulator.RearrangeFood(stoveIndex);*/
 
                     break;
                 }
@@ -179,7 +180,7 @@ public class BurgerPickup : MonoBehaviour
                         simulator.foodColumnIndex[i] = numFoodTaken - 1;
 
                         Transform foodTransform = simulator.foods[i].transform;
-
+                     
                         StartCoroutine(
                             simulator.CurveMove
                             (
@@ -189,7 +190,7 @@ public class BurgerPickup : MonoBehaviour
                                new Vector3(0,
                                7 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
                                0) +
-                               player.transform.forward * 4
+                               player.transform.forward * 8
                                ,
                                12,
                                0,
@@ -198,6 +199,8 @@ public class BurgerPickup : MonoBehaviour
                                    simulator.foodStates[foodIndex] = FoodState.Delivering;
 
                                    playerController.numberFoodHold++;
+                                   simulator.numFoodOfStorage[stoveIndex]--;
+                                   simulator.maxCapacityTMPs[stoveIndex].gameObject.SetActive(false);
 
                                    if(playerController.numberFoodHold == capacity)
                                    {
@@ -220,7 +223,7 @@ public class BurgerPickup : MonoBehaviour
                     }
                     else
                     {
-                        simulator.RearrangeFood();
+                        /*simulator.RearrangeFood(stoveIndex);*/
 
                         break;
                     }

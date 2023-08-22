@@ -36,7 +36,7 @@ public class MoneyPile : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
@@ -54,71 +54,69 @@ public class MoneyPile : MonoBehaviour
 
     IEnumerator Effect(int phase)
     {
-        GameObject[] topFaces = new GameObject[2];
+       /* GameObject[] topFaces = new GameObject[2];
         GameObject bottom;
-        ParticleSystem effect;
 
         for (int i = 0; i < transform.childCount - 2; i++)
         {
             topFaces[i] = transform.GetChild(i).gameObject;
         }
 
-        bottom = transform.GetChild(transform.childCount - 2).gameObject;
-        effect = transform.GetChild(transform.childCount - 1).gameObject.GetComponent<ParticleSystem>();
+        bottom = transform.GetChild(transform.childCount - 2).gameObject;*/
 
-        if(phase == 0)
+        if (phase == 0)
         {
-            effect.transform.position = new Vector3(
-                effect.transform.position.x,
-                topFaces[0].transform.position.y,
-                effect.transform.position.z
-                );
-           /* effect.gameObject.SetActive(true);
-            effect.Play();*/
+            Vector3 moneyPileSize = gameObject.GetComponent<MeshRenderer>().bounds.size;
 
-            unitValue = ((int)bottom.transform.localScale.y);
-            uiManager.moneyTakenTMP[index].gameObject.transform.position = new Vector3(
-                transform.position.x, transform.position.y + 20, transform.position.z - 15
-            );
+            unitValue = ((int)gameObject.transform.localScale.y);
+            /*uiManager.moneyTakenTMP[index].transform.position = new Vector3(
+                transform.position.x, transform.position.y + 1.5f * moneyPileSize.y, transform.position.z
+            );*/
             uiManager.moneyTakenTMP[index].gameObject.SetActive(true);
 
             StartCoroutine(Effect(1));
         }
         else if (phase == 1)
         {
-            while (transform.position.y > -bottom.transform.localScale.y - 1)
+            while (transform.position.y > -gameObject.transform.localScale.y - 0)
             {
                 transform.Translate(new Vector3(0, -speed * deltaTime, 0));
-
+                uiManager.moneyTakenTMP[index].transform.position = new Vector3(
+                    player.transform.position.x,
+                    player.transform.position.y + 20,
+                    player.transform.position.z
+                );
                 setMoneyTMPs();
 
-                yield return new WaitForSeconds(0.03f);
-            }
-
-            StartCoroutine(Effect(2));
-        }
-        else if (phase == 2)
-        {
-            while (topFaces[0].GetComponent<MeshRenderer>().materials[0].color.a > 0)
-            {
-                Color color = topFaces[0].GetComponent<MeshRenderer>().materials[0].color;
-
-                for (int i = 0; i < topFaces.Length; i++)
-                {
-                    topFaces[i].transform.Translate(-1 + 2*i * speed * deltaTime,
-                        speed * deltaTime, 0);
-                    topFaces[i].GetComponent<MeshRenderer>().materials[0].color = new Color(
-                        color.r, color.g, color.b, color.a - 0.05f
-                        );
-                }
-
-                setMoneyTMPs();
-
-                yield return new WaitForSeconds(0.03f);
+                yield return new WaitForSeconds(0.02f);
             }
 
             moneyPileManager.ResetProperties(index);
+
+            /*StartCoroutine(Effect(2));*/
         }
+        /* else if (phase == 2)
+         {
+             while (topFaces[0].GetComponent<MeshRenderer>().materials[0].color.a > 0)
+             {
+                 Color color = topFaces[0].GetComponent<MeshRenderer>().materials[0].color;
+
+                 for (int i = 0; i < topFaces.Length; i++)
+                 {
+                     topFaces[i].transform.Translate(-1 + 2*i * speed * deltaTime,
+                         speed * deltaTime, 0);
+                     topFaces[i].GetComponent<MeshRenderer>().materials[0].color = new Color(
+                         color.r, color.g, color.b, color.a - 0.05f
+                         );
+                 }
+
+                 setMoneyTMPs();
+
+                 yield return new WaitForSeconds(0.03f);
+             }
+
+             moneyPileManager.ResetProperties(index);
+         }*/
     }
 
     void setMoneyTMPs()
@@ -126,6 +124,10 @@ public class MoneyPile : MonoBehaviour
         totalMoneyTaken += unitValue;
         resourceManager.money += unitValue;
         uiManager.moneyTakenTMP[index].text = "$" + totalMoneyTaken;
-        resourceManager.moneyTMP.text = "$" + resourceManager.money;
+        simulator.moneyTMP.text = "$" + resourceManager.money;
+        simulator.moneyTMP.rectTransform.sizeDelta =
+                        new Vector2(simulator.moneyTMP.preferredWidth, simulator.moneyTMP.preferredHeight);
+        simulator.moneyBackground.sizeDelta =
+            new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);
     }
 }

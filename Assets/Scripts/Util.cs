@@ -249,7 +249,16 @@ public class Util : MonoBehaviour
     public void SetTMPTextOnBackground(TMP_Text tmp, RectTransform backgroundRT, string text)
     {
         tmp.text = text;
-        backgroundRT.sizeDelta = 1.1f * new Vector2(tmp.preferredWidth, tmp.preferredHeight);
+        if (tmp.preferredWidth < 0.9f * Screen.currentResolution.width)
+        {
+            tmp.rectTransform.sizeDelta = new Vector2(tmp.preferredWidth, tmp.preferredHeight);
+            backgroundRT.sizeDelta = 1.1f * new Vector2(tmp.preferredWidth, tmp.preferredHeight);
+        }
+        else
+        {
+            tmp.rectTransform.sizeDelta = new Vector2(0.9f * Screen.currentResolution.width, 2 * tmp.preferredHeight);
+            backgroundRT.sizeDelta = 1.1f * new Vector2(1.1f * tmp.rectTransform.sizeDelta.x, 2 * 1.1f * tmp.preferredHeight);
+        }   
     }
 
     public string ToShortFormNumber(int number)
@@ -266,5 +275,53 @@ public class Util : MonoBehaviour
         {
             return Math.Round(number / 1000f, 2) + "M";
         }
+    }
+
+    public IEnumerator RotateSlowly(Transform transform)
+    {
+        float angleRange = 30;
+        float deltaAngle = 3;
+
+        int phase = 0;
+
+        Vector3 initialAngles = transform.eulerAngles;
+        float remappedAngle;
+
+        while (phase < 2)
+        {
+            remappedAngle = transform.eulerAngles.z;
+            if (remappedAngle > 180)
+            {
+                remappedAngle -= 360;
+            }
+
+            if (phase % 2 == 0)
+            {
+                if (remappedAngle > -angleRange)
+                {
+                    transform.eulerAngles -= new Vector3(0, 0, deltaAngle);
+                }
+                else
+                {
+                    phase++;
+                }
+            }
+            else
+            {
+                if (remappedAngle < angleRange)
+                {
+                    transform.eulerAngles += new Vector3(0, 0, deltaAngle);
+                }
+                else
+                {
+                    phase++;
+                }
+            }
+
+            yield return new WaitForSeconds(0.04f);
+        }
+
+        transform.eulerAngles = initialAngles;
+        transform.gameObject.SetActive(false);
     }
 }

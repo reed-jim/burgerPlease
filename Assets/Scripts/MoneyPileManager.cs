@@ -68,15 +68,36 @@ public class MoneyPileManager : MonoBehaviour
         int moneyPileIndex;
 
         GameObject moneyPile;
-        GameObject[] topFaces = new GameObject[2];
-        GameObject bottom;
+        /*GameObject[] topFaces = new GameObject[2];
+        GameObject bottom;*/
 
         moneyPileIndex = moneyPileIndexBelongToTable == -1 ?
             GetAvailableMoneyPile() : moneyPileIndexBelongToTable;
         moneyPile = moneyPiles[moneyPileIndex];
 
 
-        for (int i = 0; i < moneyPile.transform.childCount - 2; i++)
+        float yScale = moneyPileIndexBelongToTable == -1 ? Random.Range(1, 10) * 3 :
+            Random.Range(1, 10) * 3 + moneyPile.transform.localScale.y;
+
+        moneyPile.transform.localScale = new Vector3(
+            moneyPile.transform.localScale.x,
+            yScale,
+            moneyPile.transform.localScale.z
+        );
+
+        moneyPile.transform.position = new Vector3(
+            spawnPosition.x,
+            0.5f * moneyPile.transform.localScale.y,
+            spawnPosition.z
+        );
+
+        moneyPile.gameObject.SetActive(true);
+
+        moneyPileBelongTo[moneyPileIndex] = "table" + tableIndex;
+        moneyPileStates[moneyPileIndex] = MoneyPileState.Active;
+
+
+        /*for (int i = 0; i < moneyPile.transform.childCount - 2; i++)
         {
             topFaces[i] = moneyPile.transform.GetChild(i).gameObject;
         }
@@ -126,10 +147,9 @@ public class MoneyPileManager : MonoBehaviour
         );
 
         moneyPile.gameObject.SetActive(true);
-        moneyTakenTMPs[moneyPileIndex].gameObject.SetActive(true);
 
         moneyPileBelongTo[moneyPileIndex] = "table" + tableIndex;
-        moneyPileStates[moneyPileIndex] = MoneyPileState.Active;
+        moneyPileStates[moneyPileIndex] = MoneyPileState.Active;*/
     }
 
     int GetMoneyIndexBelongToTable(int tableIndex)
