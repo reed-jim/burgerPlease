@@ -7,6 +7,7 @@ public class ResourceManager : MonoBehaviour
 {
     public Util util;
     public Simulator simulator;
+    public PlayerController playerController;
 
     public int money = 5000;
     public int[] stoveCapacities;
@@ -21,17 +22,32 @@ public class ResourceManager : MonoBehaviour
             stoveCapacities[i] = 6;
         }
 
-        simulator.moneyTMP.text = "$" + util.ToShortFormNumber(money); 
+        simulator.moneyTMP.text = "$" + util.ToShortFormNumber(money);
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public int GetMoney()
     {
         return money;
+    }
+
+    public void UpgradePlayerMoveSpeed()
+    {
+        playerController.speed *= 1.1f;
+    }
+
+    public void UpgradePlayerCapicity()
+    {
+        playerController.capacity++;
+    }
+
+    public void UpgradePlayerProfit()
+    {
+        playerController.profitMultiplier *= 1.1f;
     }
 }

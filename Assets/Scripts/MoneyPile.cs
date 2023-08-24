@@ -15,8 +15,10 @@ public class MoneyPile : MonoBehaviour
 
     private GameObject player;
 
+    public AudioSource takingMoneySound;
+
     private int unitValue;
-    private int totalMoneyTaken = 0;
+    public int totalMoneyTaken = 0;
 
     public int index;
 
@@ -54,33 +56,36 @@ public class MoneyPile : MonoBehaviour
 
     IEnumerator Effect(int phase)
     {
-       /* GameObject[] topFaces = new GameObject[2];
-        GameObject bottom;
+        /* GameObject[] topFaces = new GameObject[2];
+         GameObject bottom;
 
-        for (int i = 0; i < transform.childCount - 2; i++)
-        {
-            topFaces[i] = transform.GetChild(i).gameObject;
-        }
+         for (int i = 0; i < transform.childCount - 2; i++)
+         {
+             topFaces[i] = transform.GetChild(i).gameObject;
+         }
 
-        bottom = transform.GetChild(transform.childCount - 2).gameObject;*/
+         bottom = transform.GetChild(transform.childCount - 2).gameObject;*/
 
         if (phase == 0)
         {
             Vector3 moneyPileSize = gameObject.GetComponent<MeshRenderer>().bounds.size;
 
-            unitValue = ((int)gameObject.transform.localScale.y);
+            unitValue = ((int)(gameObject.transform.localScale.y * 0.05f));
             /*uiManager.moneyTakenTMP[index].transform.position = new Vector3(
                 transform.position.x, transform.position.y + 1.5f * moneyPileSize.y, transform.position.z
             );*/
             uiManager.moneyTakenTMP[index].gameObject.SetActive(true);
 
+            takingMoneySound.Play();
+
             StartCoroutine(Effect(1));
         }
         else if (phase == 1)
         {
-            while (transform.position.y > -gameObject.transform.localScale.y - 0)
+            while (transform.position.y > -0.5f * gameObject.transform.localScale.y)
             {
                 transform.Translate(new Vector3(0, -speed * deltaTime, 0));
+
                 uiManager.moneyTakenTMP[index].transform.position = new Vector3(
                     player.transform.position.x,
                     player.transform.position.y + 20,

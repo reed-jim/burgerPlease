@@ -74,6 +74,8 @@ public class UpgradeArea : MonoBehaviour
         isInside = false;
 
         StartCoroutine(util.ScaleEffect(transform, false, initialScale));
+
+        puttingMoneySound.Stop();
     }
 
     public IEnumerator UpgradeProgress(UpgradeProgressCallback OnUpgraded)

@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public enum PlayerState {
+public enum PlayerState
+{
     Ready,
     PickingFood,
     PuttingFood,
-    HoldingFood,
+    HoldingFoodStanding,
     HoldingFoodMoving,
     HoldingTrash,
     HoldingTrashMoving,
@@ -23,8 +24,7 @@ public class PlayerController : MonoBehaviour
     public Simulator simulator;
     public Util util;
     public Animator playerAnimator;
-    public float speed = 5;
-    public float rotateSpeed = 5;
+    private Rigidbody playerRigidbody;
 
     private Camera mainCamera;
     private float deltaTime;
@@ -36,14 +36,20 @@ public class PlayerController : MonoBehaviour
     public bool isSetAnimation = false;
     public PlayerState playerState;
     private PlayerState prevState;
-    public int capacity = 2;
     public int numberFoodHold = 0;
+
+    public float speed = 5;
+    public int capacity = 2;
+    public float profitMultiplier;
+    public float rotateSpeed = 5;
 
     // Start is called before the first frame update
     void Start()
     {
         mainCamera = Camera.main;
         deltaTime = Time.deltaTime;
+
+        playerRigidbody = GetComponent<Rigidbody>();
 
         playerState = PlayerState.Ready;
         prevState = playerState;
@@ -61,7 +67,7 @@ public class PlayerController : MonoBehaviour
 
         bool isMove = Input.GetMouseButton(0) && moveCondition;
 
-        if(playerState != prevState || isMove != prevIsMove)
+        if (playerState != prevState || isMove != prevIsMove)
         {
             isSetAnimation = true;
         }
@@ -71,13 +77,13 @@ public class PlayerController : MonoBehaviour
         // Movement
         if (isMove)
         {
-            if(isSetAnimation)
+            if (isSetAnimation)
             {
                 if (playerState == PlayerState.Ready)
                 {
                     util.SetMovingAnimation(playerAnimator);
                 }
-                else if(playerState == PlayerState.HoldingFoodMoving
+                else if (playerState == PlayerState.HoldingFoodMoving
                     || playerState == PlayerState.HoldingPackageMoving
                     || playerState == PlayerState.HoldingTrashMoving)
                 {
@@ -93,17 +99,16 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            if(isSetAnimation)
+            playerRigidbody.velocity = Vector3.zero;
+
+            if (isSetAnimation)
             {
-                if (playerState == PlayerState.Ready)
+                if (playerState == PlayerState.Ready
+                    || playerState == PlayerState.PickingFood)
                 {
                     util.SetIdleAnimation(playerAnimator);
                 }
-                else if (playerState == PlayerState.PickingFood)
-                {
-                    util.SetIdleAnimation(playerAnimator);
-                }
-                else if (playerState == PlayerState.HoldingFood
+                else if (playerState == PlayerState.HoldingFoodStanding
                     || playerState == PlayerState.HoldingTrash
                     || playerState == PlayerState.HoldingFoodMoving
                     || playerState == PlayerState.PackagingFood
@@ -142,15 +147,17 @@ public class PlayerController : MonoBehaviour
 
             transform.LookAt(new Vector3(pointToLook.x, 0, pointToLook.z));
 
-            transform.Translate(transform.forward * speed * deltaTime, Space.World);
+            playerRigidbody.velocity = transform.forward * speed;
+
+            /*transform.Translate(transform.forward * speed * deltaTime, Space.World);*/
         }
     }
 
     public IEnumerator ShowMaxCapacityText()
     {
-        while(true)
+        while (true)
         {
-            if(numberFoodHold == capacity)
+            if (numberFoodHold == capacity)
             {
                 if (!maxCapacityTMP.gameObject.activeInHierarchy)
                 {

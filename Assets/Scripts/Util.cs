@@ -136,36 +136,36 @@ public class Util : MonoBehaviour
     public void SetIdleAnimation(Animator animator)
     {
         animator.SetBool("isMoving", false);
-        animator.SetBool("isHoldingFood", false);
+        animator.SetBool("isHoldingFoodMoving", false);
         animator.SetBool("isHoldingFoodStanding", false);
     }
 
     public void SetMovingAnimation(Animator animator)
     {
         animator.SetBool("isMoving", true);
-        animator.SetBool("isHoldingFood", false);
+        animator.SetBool("isHoldingFoodMoving", false);
         animator.SetBool("isHoldingFoodStanding", false);
         animator.SetBool("isSitting", false);
     }
 
     public void SetHoldingFoodMovingAnimation(Animator animator)
     {
-        animator.SetBool("isMoving", true);
-        animator.SetBool("isHoldingFood", true);
+        animator.SetBool("isMoving", false);
+        animator.SetBool("isHoldingFoodMoving", true);
         animator.SetBool("isHoldingFoodStanding", false);
     }
 
     public void SetHoldingFoodStandingAnimation(Animator animator)
     {
         animator.SetBool("isMoving", false);
-        animator.SetBool("isHoldingFood", true);
+        animator.SetBool("isHoldingFoodMoving", false);
         animator.SetBool("isHoldingFoodStanding", true);
     }
 
     public void SetSittingAnimation(Animator animator)
     {
         animator.SetBool("isMoving", false);
-        animator.SetBool("isHoldingFood", false);
+        animator.SetBool("isHoldingFoodMoving", false);
         animator.SetBool("isHoldingFoodStanding", false);
         animator.SetBool("isSitting", true);
     }
@@ -173,7 +173,7 @@ public class Util : MonoBehaviour
     public void SetStandingUpAnimation(Animator animator)
     {
         animator.SetBool("isMoving", false);
-        animator.SetBool("isHoldingFood", false);
+        animator.SetBool("isHoldingFoodMoving", false);
         animator.SetBool("isHoldingFoodStanding", false);
         animator.SetBool("isSitting", false);
     }
@@ -287,7 +287,7 @@ public class Util : MonoBehaviour
         Vector3 initialAngles = transform.eulerAngles;
         float remappedAngle;
 
-        while (phase < 2)
+        while (phase < 4)
         {
             remappedAngle = transform.eulerAngles.z;
             if (remappedAngle > 180)
@@ -322,6 +322,24 @@ public class Util : MonoBehaviour
         }
 
         transform.eulerAngles = initialAngles;
+        transform.gameObject.SetActive(false);
+    }
+
+    public IEnumerator ScaleDown(Transform transform, float delay = 0)
+    {
+        Vector3 initialScale = transform.localScale;
+        Vector3 deltaScale = initialScale / 10f;
+
+        yield return new WaitForSeconds(delay);
+
+        while (transform.localScale.x > 0.1f)
+        {
+            transform.localScale -= deltaScale;
+
+            yield return new WaitForSeconds(0.02f);
+        }
+
+        transform.localScale = initialScale;
         transform.gameObject.SetActive(false);
     }
 }

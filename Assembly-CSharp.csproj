@@ -69,6 +69,7 @@
     <Compile Include="Assets\Scripts\MoneyPile.cs" />
     <Compile Include="Assets\QuickOutline\Scripts\Outline.cs" />
     <Compile Include="Assets\Scripts\PackageTable.cs" />
+    <Compile Include="Assets\Scripts\Door.cs" />
     <Compile Include="Assets\Scripts\FollowPlayerCamera.cs" />
     <Compile Include="Assets\Scripts\GameProgressManager.cs" />
     <Compile Include="Assets\Scripts\Util.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="Assets\Scripts\Simulator.cs" />
     <Compile Include="Assets\Scripts\BurgerPickup.cs" />
     <Compile Include="Assets\Scripts\TakeawayCounter.cs" />
+    <Compile Include="Assets\Scripts\Office Table.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

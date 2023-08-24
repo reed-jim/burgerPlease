@@ -17,16 +17,18 @@ public class TrashCan : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            if(playerController.playerState == PlayerState.HoldingTrashMoving)
+            if (playerController.playerState == PlayerState.HoldingTrashMoving)
             {
                 StartCoroutine(MoveTrashOneByOneToTrashCan());
+
+                playerController.playerState = PlayerState.HoldingTrash;
             }
         }
     }

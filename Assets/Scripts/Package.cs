@@ -29,7 +29,7 @@ public class Package : MonoBehaviour
             HumanController npcController = other.GetComponent<HumanController>();
 
             if (simulator.packageStates[index] == PackageState.Filling &&
-                npcController.humanState == HumanState.HoldingFood)
+                npcController.humanState == HumanState.HoldingFoodMoving)
             {
                 StartCoroutine(MoveFoodOneByOneToPackage(npcController));
 
@@ -51,7 +51,7 @@ public class Package : MonoBehaviour
                         0,
                         () =>
                         {
-                            npcController.humanState = HumanState.HoldingFood;
+                            npcController.humanState = HumanState.HoldingFoodMoving;
                             simulator.packageBelongTo[index] = npcController.id;
                             simulator.packageStates[index] = PackageState.Moving;
                         }

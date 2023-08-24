@@ -7,7 +7,7 @@ public enum HumanState
     Ready,
     Moving,
     PickingFood,
-    HoldingFood,
+    HoldingFoodMoving,
     HoldingPackage,
     PackagingFood,
     MovedAllFoodToPackage,
@@ -26,18 +26,21 @@ public class HumanController : MonoBehaviour
 {
     private GameObject foodStorage;
     private GameObject counter;
+
     private Simulator simulator;
     private Util util;
-    public float speed;
 
     public Animator animator;
     public HumanState humanState = HumanState.Ready;
     public Task task;
-    public bool setOnetimeValues = true;
-    public string id;
-    public int capacity = 2;
+   
     public int numFoodHold = 0;
     private Vector3 movingDestination;
+    public bool setOnetimeValues = true;
+
+    public string id;
+    public float speed = 2;
+    public int capacity = 2;
 
     private float deltaTime;
 
@@ -110,7 +113,7 @@ public class HumanController : MonoBehaviour
                 {                  
                     transform.LookAt(movingDestination);
 
-                    animator.SetBool("isMoving", true);
+                    util.SetMovingAnimation(animator);
                 }
                 else
                 {
@@ -119,16 +122,16 @@ public class HumanController : MonoBehaviour
 
                 transform.Translate(transform.forward * speed * deltaTime, Space.World);
             }
-            else if (humanState == HumanState.HoldingFood)
+            else if (humanState == HumanState.HoldingFoodMoving)
             {
                 if (setOnetimeValues)
                 {
                     if (task == Task.ServingFood)
                     {
                         movingDestination = new Vector3(
-                            counter.transform.position.x,
+                            simulator.bowl.transform.position.x,
                             transform.position.y,
-                            counter.transform.position.z
+                            simulator.bowl.transform.position.z
                         );
                     }
                     else if (task == Task.PackagingFood)
@@ -150,8 +153,8 @@ public class HumanController : MonoBehaviour
                     }
 
                     transform.LookAt(movingDestination);
-                    
-                    animator.SetBool("isHoldingFoodStanding", false);
+
+                    util.SetHoldingFoodMovingAnimation(animator);
 
                     setOnetimeValues = false;
                 }

@@ -4,16 +4,21 @@ using UnityEngine;
 
 public class Gate : MonoBehaviour
 {
+    public GameObject player;
     public GameObject doorLeft;
     public GameObject doorRight;
 
-    private bool isClose = false;
     private bool isOpening = false;
     private bool isClosing = false;
 
     public float deltaAngle;
 
-    private void OnTriggerExit(Collider other)
+    private void Start()
+    {
+        StartCoroutine(CheckColision());
+    }
+
+    /*private void OnTriggerExit(Collider other)
     {
         StartCoroutine(OpenDoor(false));
     }
@@ -21,7 +26,7 @@ public class Gate : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         StartCoroutine(OpenDoor(true));
-    }
+    }*/
 
     IEnumerator OpenDoor(bool isOpen)
     {
@@ -33,11 +38,11 @@ public class Gate : MonoBehaviour
 
         if (doorLeft.activeInHierarchy)
         {
-            if (isOpen && !isOpening)
+            if (isOpen && !isOpening && !isClosing)
             {
                 isOpening = true;
 
-                while (doorLeftAngle > -90 && !isClose)
+                while (doorLeftAngle > -90 && !isClosing)
                 {
                     doorLeft.transform.eulerAngles -= new Vector3(0, deltaAngle, 0);
                     doorRight.transform.eulerAngles += new Vector3(0, deltaAngle, 0);
@@ -51,7 +56,7 @@ public class Gate : MonoBehaviour
                     yield return new WaitForSeconds(0.02f);
                 }
 
-                if(!isClose)
+                if (!isClosing)
                 {
                     doorLeft.transform.eulerAngles = new Vector3(0, -90, 0);
                     doorRight.transform.eulerAngles = new Vector3(0, 270, 0);
@@ -60,7 +65,7 @@ public class Gate : MonoBehaviour
                 isOpening = false;
             }
 
-            if(!isOpen && !isClosing)
+            if (!isOpen && !isClosing)
             {
                 isClosing = true;
 
@@ -83,9 +88,31 @@ public class Gate : MonoBehaviour
                 doorLeft.transform.eulerAngles = new Vector3(0, 0, 0);
                 doorRight.transform.eulerAngles = new Vector3(0, 180, 0);
 
-                isClose = false;
                 isClosing = false;
             }
+        }
+    }
+
+    IEnumerator CheckColision()
+    {
+        while (true)
+        {
+            if (gameObject.activeInHierarchy)
+            {
+                if (Mathf.Abs(player.transform.position.x - transform.position.x) < 25
+                    && Mathf.Abs(player.transform.position.z - transform.position.z) < 25)
+                {
+                    StartCoroutine(OpenDoor(true));
+                }
+
+                if (Mathf.Abs(player.transform.position.x - transform.position.x) > 26
+                    || Mathf.Abs(player.transform.position.z - transform.position.z) > 26)
+                {
+                    StartCoroutine(OpenDoor(false));
+                }
+            }
+
+            yield return new WaitForSeconds(0.2f);
         }
     }
 }

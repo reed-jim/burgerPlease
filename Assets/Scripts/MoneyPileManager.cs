@@ -76,8 +76,8 @@ public class MoneyPileManager : MonoBehaviour
         moneyPile = moneyPiles[moneyPileIndex];
 
 
-        float yScale = moneyPileIndexBelongToTable == -1 ? Random.Range(1, 10) * 3 :
-            Random.Range(1, 10) * 3 + moneyPile.transform.localScale.y;
+        float yScale = moneyPileIndexBelongToTable == -1 ? Random.Range(3, 12) * 3 :
+            Random.Range(3, 12) * 3 + moneyPile.transform.localScale.y;
 
         moneyPile.transform.localScale = new Vector3(
             moneyPile.transform.localScale.x,
@@ -182,7 +182,9 @@ public class MoneyPileManager : MonoBehaviour
     {
         moneyPiles[index].SetActive(false);
         moneyTakenTMPs[index].gameObject.SetActive(false);
-        moneyPileStates[index] = MoneyPileState.NotSpawn;
+
+        moneyPiles[index].GetComponent<MoneyPile>().totalMoneyTaken = 0;
         moneyPileBelongTo[index] = "none";
+        moneyPileStates[index] = MoneyPileState.NotSpawn;
     }
 }

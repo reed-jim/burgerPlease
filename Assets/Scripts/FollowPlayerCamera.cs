@@ -29,8 +29,8 @@ public class FollowPlayerCamera : MonoBehaviour
             transform.position.y, player.transform.position.z + offset.z);
         if (cameraState == CameraState.FollowPlayer)
         {
-          /*  transform.position = new Vector3(player.transform.position.x + offset.x,
-            transform.position.y, player.transform.position.z + offset.z);*/
+            /*  transform.position = new Vector3(player.transform.position.x + offset.x,
+              transform.position.y, player.transform.position.z + offset.z);*/
         }
         else if (cameraState == CameraState.ZoomStart)
         {
@@ -50,13 +50,13 @@ public class FollowPlayerCamera : MonoBehaviour
         {
             if (phase == 0)
             {
-                if(Camera.main.orthographicSize > 40)
+                if (Camera.main.orthographicSize > 40)
                 {
-                    Camera.main.orthographicSize--;
+                    Camera.main.orthographicSize -= 2;
                 }
                 else
                 {
-                    yield return new WaitForSeconds(1f);
+                    yield return new WaitForSeconds(0.5f);
                     phase++;
                 }
             }
@@ -64,7 +64,7 @@ public class FollowPlayerCamera : MonoBehaviour
             {
                 if (Camera.main.orthographicSize < 90)
                 {
-                    Camera.main.orthographicSize++;
+                    Camera.main.orthographicSize += 2;
                 }
                 else
                 {
