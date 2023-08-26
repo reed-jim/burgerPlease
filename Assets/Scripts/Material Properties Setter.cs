@@ -4,20 +4,31 @@ using UnityEngine;
 
 public class MaterialPropertiesSetter : MonoBehaviour
 {
-    public float fillRate;
+    public Color color;
 
-    //The material property block we pass to the GPU
     private MaterialPropertyBlock propertyBlock;
 
-    void OnValidate()
+    private void Start()
     {
         if (propertyBlock == null)
             propertyBlock = new MaterialPropertyBlock();
 
         Renderer renderer = GetComponent<Renderer>();
 
-        propertyBlock.SetFloat("_FillRate", fillRate);
+        propertyBlock.SetColor("_BaseColor", color);
 
+        renderer.SetPropertyBlock(propertyBlock);
+    }
+
+    void OnValidate()
+    {
+        if (propertyBlock == null)
+            propertyBlock = new MaterialPropertyBlock();
+       
+        Renderer renderer = GetComponent<Renderer>();
+   
+        propertyBlock.SetColor("_BaseColor", color);
+      
         renderer.SetPropertyBlock(propertyBlock);
     }
 }

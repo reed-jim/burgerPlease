@@ -6,13 +6,15 @@ public class Table : MonoBehaviour
 {
     public Simulator simulator;
     public Util util;
+    public PlayerController playerController;
+
     public GameObject player;
     public int index;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        playerController = player.GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
@@ -27,18 +29,21 @@ public class Table : MonoBehaviour
         {
             if (other.CompareTag("Player"))
             {
-                simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
+                if(playerController.playerState == PlayerState.Ready)
+                {
+                    Debug.Log("trash + " +gameObject);
+                    simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
 
-                simulator.tableStates[index] = TableState.EmptyBoth;
-                player.GetComponent<PlayerController>().playerState = PlayerState.HoldingTrash;
+                    simulator.tableStates[index] = TableState.EmptyBoth;
 
-                StartCoroutine(
-                    simulator.moveTrashOneByOne(
-                        "player",
-                        player.transform,
-                        index
-                    )
-                );
+                    StartCoroutine(
+                        simulator.moveTrashOneByOne(
+                            "player",
+                            player.transform,
+                            index
+                        )
+                    );
+                }
             }
         }
     }

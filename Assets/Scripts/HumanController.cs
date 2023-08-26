@@ -6,17 +6,19 @@ public enum HumanState
 {
     Ready,
     Moving,
+    CashierWaiting,
     PickingFood,
     HoldingFoodMoving,
-    HoldingPackage,
+    PickingPackage,
+    HoldingPackageMoving,
     PackagingFood,
     MovedAllFoodToPackage,
-    PickingPackage
 }
 
 public enum Task
 {
     Nothing,
+    Cashier,
     ServingFood,
     PackagingFood,
     DeliverTakeawayFood
@@ -70,9 +72,13 @@ public class HumanController : MonoBehaviour
         {
             if (humanState == HumanState.Ready)
             {
-                task = FindTask();
+                task = task == Task.Cashier ? task : FindTask();
 
-                if(task == Task.ServingFood ||
+                if(task == Task.Cashier)
+                {
+                    humanState = HumanState.CashierWaiting;
+                }
+                else if(task == Task.ServingFood ||
                     task == Task.PackagingFood)
                 {
                     movingDestination = new Vector3(
@@ -137,7 +143,7 @@ public class HumanController : MonoBehaviour
                     else if (task == Task.PackagingFood)
                     {
                         movingDestination = new Vector3(
-                            simulator.packageTable.transform.position.x,
+                            simulator.packageTable.transform.position.x + 0.8f * simulator.packageTableSize.x,
                             transform.position.y,
                             simulator.packageTable.transform.position.z
                         );

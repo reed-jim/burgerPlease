@@ -14,7 +14,7 @@ public class MoneyPileManager : MonoBehaviour
     public GameObject player;
     public GameObject moneyPilePrefab;
     public GameObject[] moneyPiles;
-    public TMP_Text[] moneyTakenTMPs;
+    public TMP_Text moneyTakenTMP;
     public ParticleSystem particle;
 
     public string[] moneyPileBelongTo;
@@ -33,25 +33,14 @@ public class MoneyPileManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        TMP_Text moneyTakenTMP = moneyTakenTMPs[0];
-        moneyTakenTMPs = new TMP_Text[moneyPiles.Length];
         moneyPileBelongTo = new string[moneyPiles.Length];
         moneyPileStates = new MoneyPileState[moneyPiles.Length];
 
         for (int i = 0; i < moneyPiles.Length; i++)
         {
             moneyPiles[i] = Instantiate(moneyPilePrefab);
-            if(i == 0)
-            {
-                moneyTakenTMPs[i] = moneyTakenTMP;
-            }
-            else
-            {
-                moneyTakenTMPs[i] = Instantiate(moneyTakenTMP, moneyTakenTMP.rectTransform.parent);
-            }
 
             moneyPiles[i].SetActive(false);
-            moneyTakenTMPs[i].gameObject.SetActive(false);
 
             moneyPiles[i].GetComponent<MoneyPile>().index = i;
         }
@@ -181,7 +170,7 @@ public class MoneyPileManager : MonoBehaviour
     public void ResetProperties(int index)
     {
         moneyPiles[index].SetActive(false);
-        moneyTakenTMPs[index].gameObject.SetActive(false);
+        moneyTakenTMP.gameObject.SetActive(false);
 
         moneyPiles[index].GetComponent<MoneyPile>().totalMoneyTaken = 0;
         moneyPileBelongTo[index] = "none";

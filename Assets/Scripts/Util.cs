@@ -85,11 +85,9 @@ public class Util : MonoBehaviour
                 break;
             }
 
-            tf.Translate(tf.forward * speed * deltaTime, Space.World);
-
             prevDistance = distance;
 
-            yield return new WaitForSeconds(0.03f);
+            yield return new WaitForSeconds(0.002f);
         }
 
         callback();
@@ -213,7 +211,7 @@ public class Util : MonoBehaviour
     {
         int phase = 1;
         Vector3 initialScale = tf.localScale;
-        Vector3 deltaScale = initialScale / 5;
+        Vector3 deltaScale = initialScale / 8;
 
         while (phase < 4)
         {
@@ -240,7 +238,7 @@ public class Util : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.02f);
+            yield return new WaitForSeconds(0.01f);
         }
 
         tf.localScale = initialScale;

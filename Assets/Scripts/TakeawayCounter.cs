@@ -5,28 +5,29 @@ using UnityEngine;
 public class TakeawayCounter : MonoBehaviour
 {
     public Simulator simulator;
+    public Util util;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("NPC"))
+        if (other.CompareTag("NPC"))
         {
             HumanController npcController = other.GetComponent<HumanController>();
 
             StartCoroutine(MovePackageOneByOneToTakeawayCounter(npcController));
         }
-        else if(other.CompareTag("Player"))
+        else if (other.CompareTag("Player"))
         {
             PlayerController controller = other.GetComponent<PlayerController>();
 
@@ -77,7 +78,7 @@ public class TakeawayCounter : MonoBehaviour
                         0,
                         () =>
                         {
-                            simulator.packageStates[packageIndex] = PackageState.InTakeawayCounter;   
+                            simulator.packageStates[packageIndex] = PackageState.InTakeawayCounter;
                         }
                     )
                 );
@@ -110,6 +111,11 @@ public class TakeawayCounter : MonoBehaviour
 
             if (simulator.packageBelongTo[i] == "player")
             {
+                if (currentMoved == 0)
+                {
+                    util.SetHoldingFoodStandingAnimation(playerController.playerAnimator);
+                }
+
                 simulator.packageBelongTo[i] = "takeawayCounter";
                 simulator.packageColumnIndex[i] = simulator.numPackageBelongTo("takeawayCounter") - 1;
 
@@ -131,10 +137,14 @@ public class TakeawayCounter : MonoBehaviour
                     )
                 );
 
-                playerController.ResetProperties();
-                simulator.packageStates[i] = PackageState.Putting;
-
                 currentMoved++;
+
+                if (currentMoved == capacity)
+                {
+                    playerController.ResetProperties();
+                }
+
+                simulator.packageStates[i] = PackageState.Putting;
             }
 
             if (currentMoved < capacity)

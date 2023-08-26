@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class UI_Manager : MonoBehaviour
 {
     public TMP_Text moneyTMP;
-    public TMP_Text[] moneyTakenTMP;
+    public TMP_Text moneyTakenTMP;
 
     public RectTransform upgradeScreenRT;
     public TMP_Text upgradeScreenTitle;

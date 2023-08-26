@@ -25,7 +25,7 @@ public class Counter : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if(playerController.playerState == PlayerState.HoldingFoodMoving)
+            if (playerController.playerState == PlayerState.HoldingFoodMoving)
             {
                 StartCoroutine(MoveFoodOneByOne());
 
@@ -42,7 +42,7 @@ public class Counter : MonoBehaviour
 
     IEnumerator MoveFoodOneByOne()
     {
-        int capacity = playerController.capacity;
+        int numFoodHold = simulator.numFoodHoldOf("player");
         int numFoodBelongToCounter = 0;
         int numFoodMoved = 0;
 
@@ -56,7 +56,7 @@ public class Counter : MonoBehaviour
 
         for (int i = 0; i < simulator.foods.Length; i++)
         {
-            if (numFoodMoved < capacity)
+            if (numFoodMoved < numFoodHold)
             {
                 if (simulator.foodBelongTo[i] == "player")
                 {
@@ -92,7 +92,7 @@ public class Counter : MonoBehaviour
                                 1 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
                                 0
                             ),
-                            12,
+                            10,
                             0,
                             () =>
                             {
@@ -117,7 +117,7 @@ public class Counter : MonoBehaviour
 
     IEnumerator MoveFoodOneByOneByNpc(HumanController humanController)
     {
-        int capacity = humanController.capacity;
+        int numFoodHold = simulator.numFoodHoldOf(humanController.id);
         int numFoodBelongToCounter = 0;
         int numFoodMoved = 0;
 
@@ -131,7 +131,7 @@ public class Counter : MonoBehaviour
 
         for (int i = 0; i < simulator.foods.Length; i++)
         {
-            if (numFoodMoved < capacity)
+            if (numFoodMoved < numFoodHold)
             {
                 if (simulator.foodBelongTo[i] == humanController.id)
                 {
@@ -142,7 +142,7 @@ public class Counter : MonoBehaviour
 
                     int foodIndex = i;
 
-                    if(numFoodMoved == 0)
+                    if (numFoodMoved == 0)
                     {
                         util.SetHoldingFoodStandingAnimation(humanController.animator);
                     }
@@ -170,11 +170,11 @@ public class Counter : MonoBehaviour
                             0,
                             () =>
                             {
-                                if(humanController.numFoodHold == 0)
+                                if (humanController.numFoodHold == 0)
                                 {
                                     humanController.ResetProperties();
                                 }
-                                
+
                                 simulator.foodStates[foodIndex] = FoodState.CustomerPick;
                             }
                         )

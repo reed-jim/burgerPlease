@@ -63,7 +63,7 @@ PrefabInstance:
     - target: {fileID: 730078166988504881, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: 3378d2fd495ef37409e72e981d998abc, type: 2}
+      objectReference: {fileID: 2100000, guid: 753d6273990d78146b33f3c62dad8892, type: 2}
     - target: {fileID: 919132149155446097, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
       propertyPath: m_Name
       value: NPC Variant 1
@@ -89,6 +89,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8425081791710861950}
+    - targetCorrespondingSourceObject: {fileID: -4422985079777880719, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8153053245849544773}
   m_SourcePrefab: {fileID: 100100000, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
 --- !u!1 &82733300773571976 stripped
 GameObject:
@@ -155,11 +158,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 257512a49eaa1a142ad628ebcbd59819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 80
   animator: {fileID: 0}
   humanState: 0
   task: 0
+  numFoodHold: 0
   setOnetimeValues: 1
   id: 
+  speed: 80
   capacity: 2
-  numFoodHold: 0
+--- !u!1 &5727138568976328104 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -4422985079777880719, guid: 7230e0479c0d81f489f7f78e01be7bb2, type: 3}
+  m_PrefabInstance: {fileID: 1001070901379821785}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8153053245849544773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5727138568976328104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a75f038e239e47469339194e1bd28e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  color: {r: 0.26415092, g: 0.26415092, b: 0.26415092, a: 1}

@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class NPC_Manager : MonoBehaviour
 {
+    public Simulator simulator;
+
     public GameObject npcPrefab;
     public GameObject[] npcs;
     public HumanController[] npcControllers;
@@ -35,5 +37,14 @@ public class NPC_Manager : MonoBehaviour
             npcControllers[i] = npcs[i].GetComponent<HumanController>();
             npcControllers[i].id = "npc" + i;
         }
+    }
+
+    public void SpawnCashier()
+    {
+        npcs[0].transform.position = simulator.cashierPosition.transform.position;
+        npcs[0].transform.eulerAngles = new Vector3(0, 180, 0);
+        npcs[0].SetActive(true);
+
+        npcControllers[0].task = Task.Cashier;
     }
 }

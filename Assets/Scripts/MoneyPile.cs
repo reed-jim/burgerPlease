@@ -43,15 +43,18 @@ public class MoneyPile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        StartCoroutine(Effect(0));
+        if(other.CompareTag("Player"))
+        {
+            StartCoroutine(Effect(0));
 
-        StartCoroutine(
-            simulator.TakingMoneyEffect(
-                transform,
-                player.transform,
-                gameObject.activeInHierarchy
-            )
-        );
+            StartCoroutine(
+                simulator.TakingMoneyEffect(
+                    transform,
+                    player.transform,
+                    gameObject.activeInHierarchy
+                )
+            );
+        }
     }
 
     IEnumerator Effect(int phase)
@@ -74,7 +77,7 @@ public class MoneyPile : MonoBehaviour
             /*uiManager.moneyTakenTMP[index].transform.position = new Vector3(
                 transform.position.x, transform.position.y + 1.5f * moneyPileSize.y, transform.position.z
             );*/
-            uiManager.moneyTakenTMP[index].gameObject.SetActive(true);
+            uiManager.moneyTakenTMP.gameObject.SetActive(true);
 
             takingMoneySound.Play();
 
@@ -86,7 +89,7 @@ public class MoneyPile : MonoBehaviour
             {
                 transform.Translate(new Vector3(0, -speed * deltaTime, 0));
 
-                uiManager.moneyTakenTMP[index].transform.position = new Vector3(
+                uiManager.moneyTakenTMP.transform.position = new Vector3(
                     player.transform.position.x,
                     player.transform.position.y + 20,
                     player.transform.position.z
@@ -128,7 +131,7 @@ public class MoneyPile : MonoBehaviour
     {
         totalMoneyTaken += unitValue;
         resourceManager.money += unitValue;
-        uiManager.moneyTakenTMP[index].text = "$" + totalMoneyTaken;
+        uiManager.moneyTakenTMP.text = "$" + totalMoneyTaken;
         simulator.moneyTMP.text = "$" + resourceManager.money;
         simulator.moneyTMP.rectTransform.sizeDelta =
                         new Vector2(simulator.moneyTMP.preferredWidth, simulator.moneyTMP.preferredHeight);

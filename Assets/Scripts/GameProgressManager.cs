@@ -56,14 +56,15 @@ public class GameProgressManager : MonoBehaviour
                 simulator.upgradeAreas[0].transform.localScale = new Vector3(
                     22,
                     simulator.upgradeAreas[0].transform.localScale.y,
-                    simulator.upgradeAreas[0].transform.localScale.z
+                    20
                 );
                 simulator.upgradeAreas[0].GetComponent<UpgradeArea>().
                     initialScale = simulator.upgradeAreas[0].transform.localScale;
 
                 util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Create a door!");
 
-                simulator.SpawnUpgradeArea(new Vector3(35, 0.5f, -60), UpgradeAreaFunction.CreateGate, 500);
+                simulator.SpawnUpgradeArea(new Vector3(35.5f, 0.5f, simulator.gate.transform.position.z),
+                    UpgradeAreaFunction.CreateGate, 500);
 
                 progressStep = ProgressStep.Wait;
             }
@@ -105,6 +106,7 @@ public class GameProgressManager : MonoBehaviour
             }
             else if (progressStep == ProgressStep.DoneBasic)
             {
+                // spawn tables
                 for (int i = 0; i < simulator.tables.Length; i++)
                 {
                     if (simulator.tableStates[i] == TableState.NotSpawn)
@@ -126,7 +128,7 @@ public class GameProgressManager : MonoBehaviour
                         break;
                     }
                 }
-
+                // spawn cashier
                 if (!npc_Manager.npcs[0].activeInHierarchy)
                 {
                     simulator.SpawnUpgradeArea(
@@ -135,10 +137,10 @@ public class GameProgressManager : MonoBehaviour
                             0,
                             simulator.counter.transform.position.z
                         ),
-                        UpgradeAreaFunction.AddStaff
+                        UpgradeAreaFunction.AddCashier
                     );
                 }
-
+                // spawn package table
                 if (!simulator.packageTable.activeInHierarchy)
                 {
                     simulator.SpawnUpgradeArea(
@@ -150,7 +152,7 @@ public class GameProgressManager : MonoBehaviour
                         UpgradeAreaFunction.CreatePackageTable
                     );
                 }
-      
+                // spawn takeaway counter
                 if (simulator.packageTable.activeInHierarchy && !simulator.takeawayCounter.activeInHierarchy)
                 {
                     simulator.SpawnUpgradeArea(
@@ -161,6 +163,30 @@ public class GameProgressManager : MonoBehaviour
                             ),
                             UpgradeAreaFunction.CreateTakeawayCounter
                         );
+                }
+                // spawn office desk 0
+                if (!simulator.officeDesk[0].activeInHierarchy)
+                {
+                    simulator.SpawnUpgradeArea(
+                        new Vector3(
+                            simulator.officeDesk[0].transform.position.x,
+                            0,
+                            simulator.officeDesk[0].transform.position.z
+                        ),
+                        UpgradeAreaFunction.CreateHRUpgrade
+                    );
+                }
+                // spawn office desk 1
+                if (!simulator.officeDesk[1].activeInHierarchy)
+                {
+                    simulator.SpawnUpgradeArea(
+                        new Vector3(
+                            simulator.officeDesk[1].transform.position.x,
+                            0,
+                            simulator.officeDesk[1].transform.position.z
+                        ),
+                        UpgradeAreaFunction.CreatePlayerUpgrade
+                    );
                 }
             }
 

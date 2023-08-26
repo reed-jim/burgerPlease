@@ -26,6 +26,7 @@ public enum CustomerState
     NotSpawn,
     GoInside,
     Waiting,
+    FirstQueue,
     PickingFood,
     ChooseTable,
     GetToTable,
@@ -75,6 +76,7 @@ public enum CarState
 public enum TrashState
 {
     NotSpawn,
+    OnTable,
     Picking,
     Holding,
     MovingToTrashCan
@@ -95,9 +97,12 @@ public enum UpgradeAreaFunction
     CreateTable,
     CreateStove,
     CreateCounter,
+    AddCashier,
     AddStaff,
     CreatePackageTable,
-    CreateTakeawayCounter
+    CreateTakeawayCounter,
+    CreateHRUpgrade,
+    CreatePlayerUpgrade
 }
 
 public enum DirectionArrowState
@@ -152,6 +157,7 @@ public class Simulator : MonoBehaviour
     public GameObject[] packages = new GameObject[10];
     public GameObject[] cars = new GameObject[10];
     private GameObject[] chairs;
+    public GameObject[] officeDesk;
     public GameObject[] effectMoneys;
     public GameObject[] trashs;
     public GameObject[] upgradeAreas;
@@ -176,7 +182,10 @@ public class Simulator : MonoBehaviour
     public GameObject staffSectionFloor;
 
     public AudioSource upgradeCompleteSound;
+    public AudioSource talkingSound;
+    public AudioSource cookingSound;
 
+    public List<int> customerList;
     public CustomerState[] customerStates;
     public int[] customerNumFoodDemand;
     public FoodState[] foodStates;
@@ -198,13 +207,11 @@ public class Simulator : MonoBehaviour
     public int[] trashColumnIndex;
     public DirectionArrowState directionArrowState;
 
-    public int firstQueueCustomerIndex = 0;
-    public int numCustomerWaiting = 0;
-
     public Vector3 stoveSize;
     public Vector3 counterSize;
     public Vector3 foodSize;
     public Vector3 tableSize;
+    public Vector3 officeDeskSize;
     public Vector3 trashSize;
     public Vector3 packageSize;
     public Vector3 packageTableSize;
@@ -243,6 +250,14 @@ public class Simulator : MonoBehaviour
         loadBarRT.anchoredPosition = new Vector3(0, 3f * loadBarRT.sizeDelta.y, 0);
 
         tutorialTextBackground.anchoredPosition = new Vector3(0, -4 * tutorialTextBackground.sizeDelta.y, 0);
+    }
+
+    private void Awake()
+    {
+        upgradeCompleteSound.clip.LoadAudioData();
+        talkingSound.clip.LoadAudioData();
+        cookingSound.clip.LoadAudioData();
+        Application.targetFrameRate = 60;
     }
 
     // Start is called before the first frame update
@@ -290,7 +305,7 @@ public class Simulator : MonoBehaviour
             new Color(1, 150 / 255f, 140 / 255f);*/
 
 
-
+        customerList = new List<int>();
         for (int i = 0; i < customers.Length; i++)
         {
             customers[i] = Instantiate(customerPrefab);
@@ -337,6 +352,7 @@ public class Simulator : MonoBehaviour
             {
                 tables[i] = Instantiate(tables[0]);
                 tables[i].SetActive(false);
+                tables[i].GetComponent<Table>().index = i;
                 tableStates[i] = TableState.NotSpawn;
             }
 
@@ -440,7 +456,16 @@ public class Simulator : MonoBehaviour
         }
         takeawayCounterSize = takeawayCounter.GetComponent<MeshRenderer>().bounds.size;
         tableSize = tables[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size;
+        tableSize.y *= 9;
+
+        officeDeskSize.x = officeDesk[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size.x
+            + officeDesk[0].transform.GetChild(1).GetComponent<MeshRenderer>().bounds.size.x;
+        officeDeskSize.y = officeDesk[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size.y;
+        officeDeskSize.z = officeDesk[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size.z;
+
         trashSize = trashs[0].GetComponent<MeshRenderer>().bounds.size;
+
+
 
         StartCoroutine(LoadGame());
         StartCoroutine(DirectPlayer());
@@ -543,8 +568,6 @@ public class Simulator : MonoBehaviour
                                 )
                             );
 
-                            setNewFirstQueueCustomerIndex();
-
                             for (int k = 0; k < customers.Length; k++)
                             {
                                 if (customerStates[k] == CustomerState.Waiting)
@@ -556,7 +579,7 @@ public class Simulator : MonoBehaviour
 
                             customerDialog.SetActive(false);
 
-                            numCustomerWaiting--;
+                            customerList.RemoveAt(0);
 
                             customerStates[i] = CustomerState.GetToTable;
                             break;
@@ -581,61 +604,72 @@ public class Simulator : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.05f);
+            yield return new WaitForSeconds(0.2f);
         }
     }
 
     IEnumerator SimulateCustomerMoving()
     {
-        while(true)
+        float[] zLimits = new float[customers.Length];
+        bool[] isSetZLimits = new bool[customers.Length];
+
+        for (int i = 0; i < customers.Length; i++)
+        {
+            isSetZLimits[i] = false;
+        }
+
+        while (true)
         {
             for (int i = 0; i < customers.Length; i++)
             {
                 if (customerStates[i] == CustomerState.GoInside)
                 {
-                    float zLimit = counter.transform.position.z - 2 * customerDistance;
+                    if (!isSetZLimits[i])
+                    {
+                        if (customerList.Count > 1)
+                        {
+                            if (i == customerList[0])
+                            {
+                                zLimits[i] = counter.transform.position.z - 2 * customerDistance;
+                            }
+                            else
+                            {
+                                zLimits[i] = counter.transform.position.z - 2 * customerDistance
+                                - (customerList.Count - 1) * customerDistance;
+                            }
+                        }
+                        else
+                        {
+                            zLimits[i] = counter.transform.position.z - 2 * customerDistance;
+                        }
 
-                    if (i == 0)
-                    {
-                        if (customerStates[customerStates.Length - 1] == CustomerState.Waiting ||
-                            customerStates[customerStates.Length - 1] == CustomerState.ChooseTable)
-                        {
-                            zLimit = customers[customerStates.Length - 1].transform.position.z - customerDistance;
-                        }
+                        isSetZLimits[i] = true;
                     }
-                    else
-                    {
-                        if (customerStates[i - 1] == CustomerState.Waiting ||
-                            customerStates[i - 1] == CustomerState.ChooseTable ||
-                            customerStates[i - 1] == CustomerState.PickingFood)
-                        {
-                            zLimit = customers[i - 1].transform.position.z - customerDistance;
-                        }
-                    }
-                    
+
+                    float zLimit = zLimits[i];
+
+
+
                     if (customers[i].transform.position.z < zLimit)
                     {
-                        customers[i].transform.Translate(new Vector3(0, 0, 0.5f * speed * deltaTime));
+                        customers[i].transform.Translate(new Vector3(0, 0, speed * deltaTime));
                     }
                     else
                     {
                         util.SetIdleAnimation(customers[i].GetComponent<Animator>());
-                        customerStates[i] = CustomerState.Waiting;
 
-                        if (i == firstQueueCustomerIndex)
+                        if (i == customerList[0])
                         {
-                            customerDialog.transform.position =
-                                new Vector3(
-                                    customers[i].transform.position.x,
-                                    customers[i].transform.position.y + 23,
-                                customers[i].transform.position.z
-                                );
+                            ShowCustomerDemandDialog(i);
 
-                            customerDialog.transform.
-                                GetChild(0).GetComponent<TMP_Text>().text =
-                                "2";
-                            customerDialog.SetActive(true);
+                            customerStates[i] = CustomerState.FirstQueue;
                         }
+                        else
+                        {
+                            customerStates[i] = CustomerState.Waiting;
+                        }
+
+                        isSetZLimits[i] = false;
                     }
                 }
                 else if (customerStates[i] == CustomerState.Leaving)
@@ -741,21 +775,21 @@ public class Simulator : MonoBehaviour
                     if (packageBelongTo[i] == "player")
                     {
                         packages[i].transform.position = player.transform.position
-                            + new Vector3(0, 7, 0)
-                            + player.transform.forward * 4;
+                            + new Vector3(0, 8, 0)
+                            + player.transform.forward * 6;
                     }
                     else if (packageBelongTo[i].Contains("npc"))
                     {
                         int npcIndex = int.Parse(packageBelongTo[i][3].ToString());
 
                         packages[i].transform.position = npcManager.npcs[npcIndex].transform.position
-                            + new Vector3(0, 7, 0)
-                            + npcManager.npcs[npcIndex].transform.forward * 4;
+                            + new Vector3(0, 8, 0)
+                            + npcManager.npcs[npcIndex].transform.forward * 6;
                     }
                 }
             }
 
-            yield return new WaitForSeconds(0.01f);
+            yield return new WaitForSeconds(0.005f);
         }
     }
 
@@ -968,7 +1002,7 @@ public class Simulator : MonoBehaviour
                     if (trashBelongTo[i] == "player")
                     {
                         trashs[i].transform.position = player.transform.position
-                            + new Vector3(0, 8 + trashColumnIndex[i] * trashSize.y, 0)
+                            + new Vector3(0, 10 + trashColumnIndex[i] * trashSize.y, 0)
                             + player.transform.forward * 4;
                     }
                 }
@@ -984,7 +1018,7 @@ public class Simulator : MonoBehaviour
     {
         while (true)
         {
-            if(numCustomerWaiting < 3)
+            if (customerList.Count < 5)
             {
                 for (int i = 0; i < customers.Length; i++)
                 {
@@ -992,6 +1026,7 @@ public class Simulator : MonoBehaviour
                     {
                         customers[i].SetActive(true);
                         customers[i].GetComponent<Animator>().SetBool("isMoving", true);
+                        customers[i].transform.eulerAngles = Vector3.zero;
                         customers[i].transform.position = new Vector3(
                             counter.transform.position.x - 0.4f * counterSize.x,
                             customers[i].transform.position.y,
@@ -1001,7 +1036,7 @@ public class Simulator : MonoBehaviour
                         customerStates[i] = CustomerState.GoInside;
                         customerNumFoodDemand[i] = 2;
 
-                        numCustomerWaiting++;
+                        customerList.Add(i);
 
                         break;
                     }
@@ -1020,7 +1055,7 @@ public class Simulator : MonoBehaviour
     {
         while (true)
         {
-            for (int i = 0; i < foods.Length; i++)
+            for (int i = 0; i < foods.Length - 14; i++)
             {
                 if (numFoodOfStorage[stoveIndex] >= resourceManager.stoveCapacities[stoveIndex])
                 {
@@ -1170,11 +1205,34 @@ public class Simulator : MonoBehaviour
 
                 upgradeAreas[i].transform.position = spawnPosition;
 
-                if (upgradeAreaFunction == UpgradeAreaFunction.CreateGate)
+                if (upgradeAreaFunction == UpgradeAreaFunction.CreateTable)
                 {
-                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(2 * tableSize.x, 1, tableSize.z),
+                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(3 * tableSize.x, 1, 1.2f * tableSize.z),
                         tables[0].transform.localScale);
                 }
+                else if (upgradeAreaFunction == UpgradeAreaFunction.CreatePackageTable)
+                {
+                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(packageTableSize.x, 1, packageTableSize.z),
+                        packageTable.transform.localScale);
+                }
+                else if (upgradeAreaFunction == UpgradeAreaFunction.CreateTakeawayCounter)
+                {
+                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(takeawayCounterSize.x, 1, takeawayCounterSize.z),
+                        takeawayCounter.transform.localScale);
+                }
+                else if (upgradeAreaFunction == UpgradeAreaFunction.AddStaff)
+                {
+                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(counterSize.z, 1, counterSize.z),
+                        takeawayCounter.transform.localScale);
+                }
+                else if (upgradeAreaFunction == UpgradeAreaFunction.CreateHRUpgrade
+                    || upgradeAreaFunction == UpgradeAreaFunction.CreatePlayerUpgrade)
+                {
+                    upgradeAreaScripts[i].SetSizeEqualTo(new Vector3(officeDeskSize.x, 1, officeDeskSize.z),
+                        officeDesk[0].transform.localScale);
+                }
+
+
 
                 upgradeAreaScripts[i].SetNewRequireValue(requireValue);
                 upgradeMoneyTMPs[i].rectTransform.position = upgradeAreas[i].transform.position
@@ -1227,6 +1285,13 @@ public class Simulator : MonoBehaviour
                                 OnTableUpgraded(upgradeAreaIndex);
                             }
                             else if (upgradeAreaFunctions[upgradeAreaIndex]
+                                == UpgradeAreaFunction.AddCashier)
+                            {
+                                npcManager.SpawnCashier();
+
+                                ResetUpgradeAreaProperties(upgradeAreaIndex);
+                            }
+                            else if (upgradeAreaFunctions[upgradeAreaIndex]
                                 == UpgradeAreaFunction.AddStaff)
                             {
                                 npcManager.npcs[0].SetActive(true);
@@ -1242,6 +1307,16 @@ public class Simulator : MonoBehaviour
                                 == UpgradeAreaFunction.CreateTakeawayCounter)
                             {
                                 OnTakeawayCounterUpgraded(upgradeAreaIndex);
+                            }
+                            else if (upgradeAreaFunctions[upgradeAreaIndex]
+                                == UpgradeAreaFunction.CreateHRUpgrade)
+                            {
+                                officeDesk[0].SetActive(true);
+                            }
+                            else if (upgradeAreaFunctions[upgradeAreaIndex]
+                                == UpgradeAreaFunction.CreatePlayerUpgrade)
+                            {
+                                officeDesk[1].SetActive(true);
                             }
                         }
                     )
@@ -1300,7 +1375,7 @@ public class Simulator : MonoBehaviour
             if (!happyEmojis[i].activeInHierarchy)
             {
                 happyEmojis[i].transform.position = spawnPosition
-                    + new Vector3(0, 25, 0);
+                    + new Vector3(0, 23, 0);
 
                 happyEmojis[i].SetActive(true);
 
@@ -1320,7 +1395,7 @@ public class Simulator : MonoBehaviour
 
         for (int i = 0; i < trashs.Length; i++)
         {
-            if(trashBelongTo[i] == belongTo)
+            if (trashBelongTo[i] == belongTo)
             {
                 currentHighestIndex = Mathf.Max(currentHighestIndex, trashColumnIndex[i]);
             }
@@ -1346,6 +1421,8 @@ public class Simulator : MonoBehaviour
 
                 trashs[i].SetActive(true);
 
+                trashStates[i] = TrashState.OnTable;
+
                 numSpawn++;
             }
             if (numSpawn > 1)
@@ -1369,7 +1446,7 @@ public class Simulator : MonoBehaviour
 
         ResetUpgradeAreaProperties(0);
 
-        upgradeAreaScripts[0].SetSizeEqualTo(new Vector3(2 * tableSize.x, 1, tableSize.z),
+        upgradeAreaScripts[0].SetSizeEqualTo(new Vector3(3 * tableSize.x, 1, 1.2f * tableSize.z),
             tables[0].transform.localScale);
 
         util.SetTMPTextOnBackground(tutorialText, tutorialTextBackground, "Create a table!");
@@ -1432,7 +1509,7 @@ public class Simulator : MonoBehaviour
         Vector3 spawnPosition = new Vector3(
             counter.transform.position.x,
             0,
-            counter.transform.position.z
+            counter.transform.position.z + counterSize.z
         );
         SpawnUpgradeArea(spawnPosition, UpgradeAreaFunction.CreateCounter, 200);
 
@@ -1446,6 +1523,7 @@ public class Simulator : MonoBehaviour
         StartCoroutine(util.ScaleUpDownEffect(counter.transform, 0.2f));
 
         upgradeCompleteSound.Play();
+        talkingSound.Play();
 
         ResetUpgradeAreaProperties(0);
 
@@ -1457,6 +1535,7 @@ public class Simulator : MonoBehaviour
         StartCoroutine(SimulateCustomerMoving());
         StartCoroutine(SimulateFoodCycle());
         StartCoroutine(SimulateTrashCycle());
+        StartCoroutine(cashierPosition.GetComponent<CashierPosition>().CheckCashier());
 
         gameProgressManager.progressStep = ProgressStep.PickupFoodTutorialStart;
         directionArrowState = DirectionArrowState.Set;
@@ -1467,6 +1546,9 @@ public class Simulator : MonoBehaviour
         packageTable.SetActive(true);
         StartCoroutine(util.ScaleUpDownEffect(packageTable.transform, 0.2f));
 
+        upgradeCompleteSound.Play();
+
+        StartCoroutine(packageTable.GetComponent<PackageTable>().CheckHumanAction());
         StartCoroutine(SpawnPackage());
         StartCoroutine(SimulatePackageCycle());
 
@@ -1477,6 +1559,8 @@ public class Simulator : MonoBehaviour
     {
         takeawayCounter.SetActive(true);
         StartCoroutine(util.ScaleUpDownEffect(takeawayCounter.transform, 0.2f));
+
+        upgradeCompleteSound.Play();
 
         StartCoroutine(SpawnCar());
         StartCoroutine(SimulateCarCycle());
@@ -1603,11 +1687,15 @@ public class Simulator : MonoBehaviour
                             0,
                             () =>
                             {
-                                if(numTake == 1)
+                                if (numTake == 1)
                                 {
-                                    playerController.playerState = PlayerState.HoldingTrash;
+                                    playerController.playerState = PlayerState.HoldingTrashStanding;
                                 }
                                 if (numTake == capacity)
+                                {
+                                    playerController.playerState = PlayerState.HoldingTrashMoving;
+                                }
+                                if (numTake > 0 && trashIndex == trashs.Length - 1)
                                 {
                                     playerController.playerState = PlayerState.HoldingTrashMoving;
                                 }
@@ -1876,7 +1964,7 @@ public class Simulator : MonoBehaviour
                         )
                     );
 
-                    if(moneyPileGridIndex < 9)
+                    if (moneyPileGridIndex < 9)
                     {
                         moneyPileGridIndex++;
                     }
@@ -1943,7 +2031,7 @@ public class Simulator : MonoBehaviour
                     isEffectMoneyUsed[i] = true;
                 }
 
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.15f);
             }
         }
 
@@ -2101,7 +2189,7 @@ public class Simulator : MonoBehaviour
     {
         while (customerStates[customerIndex] != CustomerState.Leaving)
         {
-            yield return new WaitForSeconds(4f);
+            yield return new WaitForSeconds(10f);
 
             int happyEmojiIndex = 0;
 
@@ -2132,7 +2220,7 @@ public class Simulator : MonoBehaviour
             {
                 resetFoodProperties(sortedFoodIndexes[i]);
 
-                if(i == customerNumFoodDemand[customerIndex] - 1)
+                if (i == customerNumFoodDemand[customerIndex] - 1)
                 {
                     break;
                 }
@@ -2174,7 +2262,7 @@ public class Simulator : MonoBehaviour
                 new Vector3(
                     tables[tableIndex].transform.position.x + tableSize.x / 2,
                     0,
-                    tables[tableIndex].transform.position.z + tableSize.z + 10
+                    tables[tableIndex].transform.position.z - tableSize.z - 6
                 ),
                 tableIndex
             );
@@ -2197,23 +2285,12 @@ public class Simulator : MonoBehaviour
         return 0;
     }
 
-    void setNewFirstQueueCustomerIndex()
-    {
-        if (firstQueueCustomerIndex < customers.Length - 1)
-        {
-            firstQueueCustomerIndex++;
-        }
-        else
-        {
-            firstQueueCustomerIndex = 0;
-        }
-    }
-
     public IEnumerator CurveMove(Transform tf, Vector3 start, Vector3 end,
         float height, int phase, CurveMoveCallback callback)
     {
         Vector3 midPoint = (start + end) / 2;
-        Vector3 top = new Vector3(midPoint.x, midPoint.y + height, midPoint.z);
+        float highest = Mathf.Max(Mathf.Max(start.y, midPoint.y), end.y);
+        Vector3 top = new Vector3(midPoint.x, highest + height, midPoint.z);
         Vector3 direction = Vector3.zero;
         bool isDirectionSet = false;
         bool isDeltaDistanceSet = false;
@@ -2319,7 +2396,7 @@ public class Simulator : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.02f);
+            yield return new WaitForSeconds(0.01f);
         }
 
         tf.position = end;
@@ -2435,9 +2512,9 @@ public class Simulator : MonoBehaviour
     {
         List<int> foundIndexes = new List<int>();
 
-        for(int i = 0; i < foods.Length; i++)
+        for (int i = 0; i < foods.Length; i++)
         {
-            if(!isContain && foodBelongTo[i] == owner)
+            if (!isContain && foodBelongTo[i] == owner)
             {
                 foundIndexes.Add(i);
             }
@@ -2451,7 +2528,7 @@ public class Simulator : MonoBehaviour
         {
             for (int j = i + 1; j < foundIndexes.Count; j++)
             {
-                if(foodColumnIndex[foundIndexes[j]] > foodColumnIndex[foundIndexes[i]])
+                if (foodColumnIndex[foundIndexes[j]] > foodColumnIndex[foundIndexes[i]])
                 {
                     int temp = foundIndexes[j];
                     foundIndexes[j] = foundIndexes[i];
@@ -2461,5 +2538,21 @@ public class Simulator : MonoBehaviour
         }
 
         return foundIndexes;
+    }
+
+    void ShowCustomerDemandDialog(int customerIndex)
+    {
+        customerDialog.transform.position =
+        new Vector3(
+            customers[customerIndex].transform.position.x,
+            customers[customerIndex].transform.position.y + 23,
+        customers[customerIndex].transform.position.z
+        );
+
+        customerDialog.transform.
+            GetChild(0).GetComponent<TMP_Text>().text =
+            "2";
+
+        customerDialog.SetActive(true);
     }
 }

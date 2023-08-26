@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Gate : MonoBehaviour
 {
+    public Simulator simulator;
+
     public GameObject player;
     public GameObject doorLeft;
     public GameObject doorRight;
@@ -99,17 +101,42 @@ public class Gate : MonoBehaviour
         {
             if (gameObject.activeInHierarchy)
             {
-                if (Mathf.Abs(player.transform.position.x - transform.position.x) < 25
-                    && Mathf.Abs(player.transform.position.z - transform.position.z) < 25)
+                if (Mathf.Abs(player.transform.position.z - transform.position.z) < 30)
                 {
-                    StartCoroutine(OpenDoor(true));
-                }
+                    if (Mathf.Abs(player.transform.position.x - transform.position.x) < 20
+                    && Mathf.Abs(player.transform.position.z - transform.position.z) < 20)
+                    {
+                        StartCoroutine(OpenDoor(true));
+                    }
 
-                if (Mathf.Abs(player.transform.position.x - transform.position.x) > 26
-                    || Mathf.Abs(player.transform.position.z - transform.position.z) > 26)
-                {
-                    StartCoroutine(OpenDoor(false));
+                    if (Mathf.Abs(player.transform.position.x - transform.position.x) > 21
+                        || Mathf.Abs(player.transform.position.z - transform.position.z) > 21)
+                    {
+                        StartCoroutine(OpenDoor(false));
+                    }
                 }
+            }
+
+            for (int i = 0; i < simulator.customers.Length ; i++)
+            {
+                if(simulator.customers[i].activeInHierarchy
+                    && simulator.customerStates[i] == CustomerState.GoInside)
+                {
+                    if (Mathf.Abs(simulator.customers[i].transform.position.z - transform.position.z) < 30)
+                    {
+                        if (Mathf.Abs(simulator.customers[i].transform.position.x - transform.position.x) < 20
+                    && Mathf.Abs(simulator.customers[i].transform.position.z - transform.position.z) < 20)
+                        {
+                            StartCoroutine(OpenDoor(true));
+                        }
+
+                        if (Mathf.Abs(simulator.customers[i].transform.position.x - transform.position.x) > 21
+                            || Mathf.Abs(simulator.customers[i].transform.position.z - transform.position.z) > 21)
+                        {
+                            StartCoroutine(OpenDoor(false));
+                        }
+                    }
+                } 
             }
 
             yield return new WaitForSeconds(0.2f);

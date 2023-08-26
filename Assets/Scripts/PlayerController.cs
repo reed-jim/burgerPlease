@@ -10,7 +10,7 @@ public enum PlayerState
     PuttingFood,
     HoldingFoodStanding,
     HoldingFoodMoving,
-    HoldingTrash,
+    HoldingTrashStanding,
     HoldingTrashMoving,
     PackagingFood,
     PickingPackage,
@@ -25,6 +25,9 @@ public class PlayerController : MonoBehaviour
     public Util util;
     public Animator playerAnimator;
     private Rigidbody playerRigidbody;
+
+    public RectTransform joystickOuter;
+    public RectTransform joystickInner;
 
     private Camera mainCamera;
     private float deltaTime;
@@ -93,7 +96,8 @@ public class PlayerController : MonoBehaviour
                 isSetAnimation = false;
             }
 
-            Move();
+            /*            Move();*/
+            MoveJoystick();
 
             prevIsMove = true;
         }
@@ -109,12 +113,13 @@ public class PlayerController : MonoBehaviour
                     util.SetIdleAnimation(playerAnimator);
                 }
                 else if (playerState == PlayerState.HoldingFoodStanding
-                    || playerState == PlayerState.HoldingTrash
+                    || playerState == PlayerState.HoldingTrashStanding
                     || playerState == PlayerState.HoldingFoodMoving
+                    || playerState == PlayerState.HoldingTrashMoving
+                    || playerState == PlayerState.HoldingPackageMoving
                     || playerState == PlayerState.PackagingFood
                     || playerState == PlayerState.PickingPackage
-                    || playerState == PlayerState.PuttingFood
-                    || playerState == PlayerState.HoldingPackageMoving)
+                    || playerState == PlayerState.PuttingFood)
                 {
                     util.SetHoldingFoodStandingAnimation(playerAnimator);
                 }
@@ -173,5 +178,64 @@ public class PlayerController : MonoBehaviour
 
             yield return new WaitForSeconds(0.000f);
         }
+    }
+
+    public void MoveJoystick()
+    {
+        // (0,0) of mouse is at bottom-left
+        Vector2 mousePostion = new Vector2(
+            Input.mousePosition.x - Screen.currentResolution.width / 2,
+            Input.mousePosition.y - Screen.currentResolution.height / 2
+        );
+
+        Vector2 direction = 1f * new Vector2(mousePostion.x - joystickOuter.localPosition.x,
+            mousePostion.y - joystickOuter.localPosition.y);
+
+       /* if(Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        {
+            if(direction.x > 0)
+            {
+                direction.x = 100;
+            }
+            if (direction.x < 0)
+            {
+                direction.x = -100;
+            }
+        }
+        else
+        {
+            if (direction.y > 0)
+            {
+                direction.y = 100;
+            }
+            if (direction.y < 0)
+            {
+                direction.y = -100;
+            }
+        }*/
+
+        if (direction.x > 100) direction.x = 100;
+        if (direction.y > 100) direction.y = 100;
+        if (direction.x < -100) direction.x = -100;
+        if (direction.y < -100) direction.y = -100;
+
+        joystickInner.anchoredPosition = new Vector3(
+            direction.x,
+            direction.y,
+            joystickInner.localPosition.z
+        );
+
+        Vector3 point1 = mainCamera.ScreenToWorldPoint(new Vector3(
+            joystickInner.anchoredPosition.x,
+            joystickInner.anchoredPosition.y,
+            0
+        ));
+        Vector3 point2 = mainCamera.ScreenToWorldPoint(Vector3.zero);
+
+        Vector3 playerDirection = new Vector3(point1.x - point2.x, 0, point1.z - point2.z);
+
+        transform.rotation = Quaternion.LookRotation(playerDirection);
+
+        playerRigidbody.velocity = transform.forward * speed;
     }
 }

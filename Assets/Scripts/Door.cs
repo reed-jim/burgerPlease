@@ -108,14 +108,14 @@ public class Door : MonoBehaviour
     {
         while(true)
         {
-            if(Mathf.Abs(player.transform.position.x - transform.position.x) < 40 
-                && Mathf.Abs(player.transform.position.z - transform.position.z) < 40)
+            if(Mathf.Abs(player.transform.position.x - transform.position.x) < 25 
+                && Mathf.Abs(player.transform.position.z - transform.position.z) < 25)
             {
                 StartCoroutine(OpenDoor(true));
             }
 
-            if (Mathf.Abs(player.transform.position.x - transform.position.x) > 41
-                || Mathf.Abs(player.transform.position.z - transform.position.z) > 41)
+            if (Mathf.Abs(player.transform.position.x - transform.position.x) > 26
+                || Mathf.Abs(player.transform.position.z - transform.position.z) > 26)
             {
                 StartCoroutine(OpenDoor(false));
             }

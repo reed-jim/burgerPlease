@@ -41,16 +41,13 @@ public class FollowPlayerCamera : MonoBehaviour
 
     public IEnumerator Zoom()
     {
-        Vector3 initialPosition = transform.position;
-        float distance;
-
         int phase = 0;
 
         while (phase < 2)
         {
             if (phase == 0)
             {
-                if (Camera.main.orthographicSize > 40)
+                if (Camera.main.orthographicSize > 70)
                 {
                     Camera.main.orthographicSize -= 2;
                 }
@@ -62,7 +59,7 @@ public class FollowPlayerCamera : MonoBehaviour
             }
             else if (phase == 1)
             {
-                if (Camera.main.orthographicSize < 90)
+                if (Camera.main.orthographicSize < 110)
                 {
                     Camera.main.orthographicSize += 2;
                 }
@@ -72,7 +69,7 @@ public class FollowPlayerCamera : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.02f);
+            yield return new WaitForSeconds(0.002f);
         }
     }
 }

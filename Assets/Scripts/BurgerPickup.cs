@@ -28,6 +28,11 @@ public class BurgerPickup : MonoBehaviour
         util = GameObject.Find("Util").GetComponent<Util>();
     }
 
+    private void OnTriggerExit(Collider other)
+    {
+        simulator.cookingSound.Stop();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         util.preventOnTriggerTwice(other.transform, simulator.foodStorages[stoveIndex].transform.position);
@@ -43,12 +48,17 @@ public class BurgerPickup : MonoBehaviour
 
             StartCoroutine(PickupFoodOneByOne(controller));
         }
+
+        simulator.cookingSound.Play();
     }
 
     IEnumerator PickupFoodOneByOne(HumanController controller)
     {
         int capacity = controller.capacity;
         int numFoodTaken = controller.numFoodHold;
+
+        util.SetIdleAnimation(controller.animator);
+        controller.humanState = HumanState.PickingFood;
 
         List<int> foodToPickIndexes = simulator.FindAndSortFood("storage" + stoveIndex, false);
 
@@ -63,12 +73,6 @@ public class BurgerPickup : MonoBehaviour
 
             if (simulator.foodStates[foodIndex] == FoodState.Wait)
             {
-                if (numFoodTaken == 0)
-                {
-                    util.SetIdleAnimation(controller.animator);
-                    controller.humanState = HumanState.PickingFood;
-                }
-
                 if (numFoodTaken < capacity)
                 {
                     numFoodTaken++;
@@ -120,6 +124,17 @@ public class BurgerPickup : MonoBehaviour
                 }
             }
         }
+
+        if(numFoodTaken == 0)
+        {
+            yield return new WaitForSeconds(2f);
+
+            StartCoroutine(PickupFoodOneByOne(controller));
+        }
+        if(numFoodTaken > 0 && numFoodTaken < capacity)
+        {
+            controller.humanState = HumanState.HoldingFoodMoving;
+        }
     }
 
     IEnumerator PickupFoodOneByOneByPlayer()
@@ -129,35 +144,14 @@ public class BurgerPickup : MonoBehaviour
             int capacity = playerController.capacity;
             int numFoodTaken = 0;
 
-            List<int> foodToPickIndexes = new List<int>();
-
-            for (int i = 0; i < simulator.foods.Length; i++)
-            {
-                if (simulator.foodBelongTo[i] == "storage" + stoveIndex)
-                {
-                    foodToPickIndexes.Add(i);
-                }
-            }
-
-            for (int i = 0; i < foodToPickIndexes.Count - 1; i++)
-            {
-                for (int j = i + 1; j < foodToPickIndexes.Count; j++)
-                {
-                    if(simulator.foodColumnIndex[foodToPickIndexes[j]] > simulator.foodColumnIndex[foodToPickIndexes[i]])
-                    {
-                        int temp = foodToPickIndexes[j];
-                        foodToPickIndexes[j] = foodToPickIndexes[i];
-                        foodToPickIndexes[i] = temp;
-                    }
-                }
-            }
+            List<int> foodToPickIndexes = simulator.FindAndSortFood("storage" + stoveIndex);
 
             for (int i = 0; i < foodToPickIndexes.Count; i++)
             {
                 int foodIndex = foodToPickIndexes[i];
+                bool isLast = i == foodToPickIndexes.Count - 1 ? true : false;
 
-                if (simulator.foodStates[foodIndex] == FoodState.Wait
-                    && simulator.foodBelongTo[foodIndex] == "storage" + stoveIndex)
+                if (simulator.foodStates[foodIndex] == FoodState.Wait)
                 {
                     if (numFoodTaken == 0)
                     {
@@ -207,6 +201,11 @@ public class BurgerPickup : MonoBehaviour
                                    {
                                        playerController.playerState = PlayerState.HoldingFoodStanding;
                                    }
+                                   
+                                   if(isLast && playerController.numberFoodHold < capacity)
+                                   {
+                                       playerController.playerState = PlayerState.HoldingFoodMoving;
+                                   }
                                }
                             )
                         );
@@ -218,6 +217,11 @@ public class BurgerPickup : MonoBehaviour
                         break;
                     }
                 }
+            }
+
+            if (numFoodTaken == 0)
+            {
+                playerController.playerState = PlayerState.Ready;
             }
         }
     }

@@ -34,6 +34,11 @@ public class UpgradeArea : MonoBehaviour
 
     public delegate void UpgradeProgressCallback();
 
+    private void Awake()
+    {
+        puttingMoneySound.clip.LoadAudioData();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -107,6 +112,8 @@ public class UpgradeArea : MonoBehaviour
                 yield return new WaitForSeconds(0.3f);
             }
         }
+
+        puttingMoneySound.Stop();
 
         OnUpgraded();
     }

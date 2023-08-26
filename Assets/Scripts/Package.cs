@@ -22,7 +22,7 @@ public class Package : MonoBehaviour
 
     }
 
-    private void OnTriggerEnter(Collider other)
+    /*private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("NPC"))
         {
@@ -71,7 +71,7 @@ public class Package : MonoBehaviour
                 npcController.humanState = HumanState.PickingPackage;
             }
         }
-    }
+    }*/
 
     IEnumerator MoveFoodOneByOneToPackage(HumanController npcController)
     {

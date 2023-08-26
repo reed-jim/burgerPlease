@@ -28,7 +28,7 @@ public class TrashCan : MonoBehaviour
             {
                 StartCoroutine(MoveTrashOneByOneToTrashCan());
 
-                playerController.playerState = PlayerState.HoldingTrash;
+                playerController.playerState = PlayerState.HoldingTrashStanding;
             }
         }
     }
