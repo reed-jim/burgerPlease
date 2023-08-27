@@ -30,6 +30,7 @@ public class HumanController : MonoBehaviour
     private GameObject counter;
 
     private Simulator simulator;
+    private NPC_Manager npcManager;
     private Util util;
 
     public Animator animator;
@@ -52,6 +53,7 @@ public class HumanController : MonoBehaviour
         foodStorage = GameObject.Find("Food Storage");
         counter = GameObject.Find("Counter");
         simulator = GameObject.Find("Simulator").GetComponent<Simulator>();
+        npcManager = GameObject.Find("NPC_Manager").GetComponent<NPC_Manager>();
         util = GameObject.Find("Util").GetComponent<Util>();
         animator = GetComponent<Animator>();
 
@@ -178,23 +180,54 @@ public class HumanController : MonoBehaviour
 
     Task FindTask()
     {
-        for (int i = 0; i < simulator.packages.Length; i++)
+        bool isOtherServingFood = false;
+        bool isOtherPackagingFood = false;
+        bool isOtherDeliverTakeawayFood = false;
+        bool isOtherPickingTrash = false;
+
+        for (int i = 0; i < npcManager.npcs.Length; i++)
         {
-            if (simulator.packageStates[i] == PackageState.Filling)
+            if(npcManager.npcControllers[i].task == Task.ServingFood)
             {
-                return Task.PackagingFood;
+                isOtherServingFood = true;
             }
-            if (simulator.packageStates[i] == PackageState.Filled)
+            if (npcManager.npcControllers[i].task == Task.PackagingFood)
             {
-                return Task.DeliverTakeawayFood;
+                isOtherPackagingFood = true;
+            }
+            if (npcManager.npcControllers[i].task == Task.DeliverTakeawayFood)
+            {
+                isOtherDeliverTakeawayFood = true;
+            }
+/*            if (npcManager.npcControllers[i].task == Task.P)
+            {
+
+            }*/
+        }
+
+        if(!isOtherPackagingFood || !isOtherDeliverTakeawayFood)
+        {
+            for (int i = 0; i < simulator.packages.Length; i++)
+            {
+                if (!isOtherPackagingFood && simulator.packageStates[i] == PackageState.Filling)
+                {
+                    return Task.PackagingFood;
+                }
+                if (!isOtherDeliverTakeawayFood && simulator.packageStates[i] == PackageState.Filled)
+                {
+                    return Task.DeliverTakeawayFood;
+                }
             }
         }
 
-        for (int i = 0; i < simulator.foods.Length; i++)
+        if(!isOtherServingFood)
         {
-            if (simulator.foodStates[i] == FoodState.Wait)
+            for (int i = 0; i < simulator.foods.Length; i++)
             {
-                return Task.ServingFood;
+                if (simulator.foodStates[i] == FoodState.Wait)
+                {
+                    return Task.ServingFood;
+                }
             }
         }
 

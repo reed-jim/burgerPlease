@@ -29,6 +29,12 @@ public class GameProgressManager : MonoBehaviour
     public bool isEnableTutorial;
     public ProgressStep progressStep;
 
+    public bool isTableUpgradeSpawn = false;
+    public bool isCashierUpgradeSpawn = false;
+    public bool isPackageTableUpgradeSpawn = false;
+    public bool isTakeawayCounterUpgradeSpawn = false;
+    public bool isOfficeTableUpgradeSpawn = false;
+
     // Start is called before the first frame update
     private void Awake()
     {
@@ -107,29 +113,34 @@ public class GameProgressManager : MonoBehaviour
             else if (progressStep == ProgressStep.DoneBasic)
             {
                 // spawn tables
-                for (int i = 0; i < simulator.tables.Length; i++)
+                if(!isTableUpgradeSpawn)
                 {
-                    if (simulator.tableStates[i] == TableState.NotSpawn)
+                    for (int i = 0; i < simulator.tables.Length; i++)
                     {
-                        int col = 2;
+                        if (simulator.tableStates[i] == TableState.NotSpawn)
+                        {
+                            int col = 2;
 
-                        int x = i % col;
-                        int y = (i - i % col) / col;
+                            int x = i % col;
+                            int y = (i - i % col) / col;
 
-                        simulator.SpawnUpgradeArea(
-                            new Vector3(
-                                simulator.tables[0].transform.position.x + x * 60,
-                                0,
-                                simulator.tables[0].transform.position.z - y * 40
-                            ),
-                            UpgradeAreaFunction.CreateTable
-                        );
+                            simulator.SpawnUpgradeArea(
+                                new Vector3(
+                                    simulator.tables[0].transform.position.x + x * 60,
+                                    0,
+                                    simulator.tables[0].transform.position.z - y * 40
+                                ),
+                                UpgradeAreaFunction.CreateTable
+                            );
 
-                        break;
+                            isTableUpgradeSpawn = true;
+
+                            break;
+                        }
                     }
                 }
                 // spawn cashier
-                if (!npc_Manager.npcs[0].activeInHierarchy)
+                if (!npc_Manager.npcs[0].activeInHierarchy && !isCashierUpgradeSpawn)
                 {
                     simulator.SpawnUpgradeArea(
                         new Vector3(
@@ -139,9 +150,11 @@ public class GameProgressManager : MonoBehaviour
                         ),
                         UpgradeAreaFunction.AddCashier
                     );
+
+                    isCashierUpgradeSpawn = true;
                 }
                 // spawn package table
-                if (!simulator.packageTable.activeInHierarchy)
+                if (!simulator.packageTable.activeInHierarchy && !isPackageTableUpgradeSpawn)
                 {
                     simulator.SpawnUpgradeArea(
                         new Vector3(
@@ -151,42 +164,53 @@ public class GameProgressManager : MonoBehaviour
                         ),
                         UpgradeAreaFunction.CreatePackageTable
                     );
+
+                    isPackageTableUpgradeSpawn = true;
                 }
                 // spawn takeaway counter
-                if (simulator.packageTable.activeInHierarchy && !simulator.takeawayCounter.activeInHierarchy)
+                if (simulator.packageTable.activeInHierarchy
+                    && !simulator.takeawayCounter.activeInHierarchy
+                    && !isTakeawayCounterUpgradeSpawn)
                 {
                     simulator.SpawnUpgradeArea(
+                        new Vector3(
+                            simulator.takeawayCounter.transform.position.x,
+                            0,
+                            simulator.takeawayCounter.transform.position.z
+                        ),
+                        UpgradeAreaFunction.CreateTakeawayCounter
+                    );
+
+                    isTakeawayCounterUpgradeSpawn = true;
+                }
+                // spawn office desk
+                if(!isOfficeTableUpgradeSpawn)
+                {
+                    if (!simulator.officeDesk[0].activeInHierarchy)
+                    {
+                        simulator.SpawnUpgradeArea(
                             new Vector3(
-                                simulator.takeawayCounter.transform.position.x,
+                                simulator.officeDesk[0].transform.position.x,
                                 0,
-                                simulator.takeawayCounter.transform.position.z
+                                simulator.officeDesk[0].transform.position.z
                             ),
-                            UpgradeAreaFunction.CreateTakeawayCounter
+                            UpgradeAreaFunction.CreateHRUpgrade
                         );
-                }
-                // spawn office desk 0
-                if (!simulator.officeDesk[0].activeInHierarchy)
-                {
-                    simulator.SpawnUpgradeArea(
-                        new Vector3(
-                            simulator.officeDesk[0].transform.position.x,
-                            0,
-                            simulator.officeDesk[0].transform.position.z
-                        ),
-                        UpgradeAreaFunction.CreateHRUpgrade
-                    );
-                }
-                // spawn office desk 1
-                if (!simulator.officeDesk[1].activeInHierarchy)
-                {
-                    simulator.SpawnUpgradeArea(
-                        new Vector3(
-                            simulator.officeDesk[1].transform.position.x,
-                            0,
-                            simulator.officeDesk[1].transform.position.z
-                        ),
-                        UpgradeAreaFunction.CreatePlayerUpgrade
-                    );
+                    }
+
+                    if (!simulator.officeDesk[1].activeInHierarchy)
+                    {
+                        simulator.SpawnUpgradeArea(
+                            new Vector3(
+                                simulator.officeDesk[1].transform.position.x,
+                                0,
+                                simulator.officeDesk[1].transform.position.z
+                            ),
+                            UpgradeAreaFunction.CreatePlayerUpgrade
+                        );
+                    }
+
+                    isOfficeTableUpgradeSpawn = true;
                 }
             }
 

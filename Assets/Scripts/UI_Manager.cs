@@ -16,9 +16,13 @@ public class UI_Manager : MonoBehaviour
     public TMP_Text[] upgradeOptionTitles;
     public TMP_Text[] upgradeOptionTexts;
     public Button[] upgradeOptionButtons;
+    public Button closeUpgradeScreenButton;
+
+    public RectTransform customerDialogRT;
 
     public ResourceManager resourceManager;
     public PlayerController playerController;
+    public NPC_Manager npcManager;
 
     Vector2 screenSize;
 
@@ -29,7 +33,7 @@ public class UI_Manager : MonoBehaviour
         screenSize.y = Screen.currentResolution.height;
 
         moneyTMP.text = resourceManager.money.ToString();
-        
+
         Initialize();
         SetUI();
     }
@@ -46,23 +50,35 @@ public class UI_Manager : MonoBehaviour
         }
 
         upgradeOptionTitles[1].text = "Capacity";
+        upgradeOptionButtons[2].onClick.AddListener(OnAddStaff);
 
         Destroy(upgradeOptionBackgroundRT.gameObject);
     }
 
     void SetUI()
     {
+        RectTransform closeUpgradeScreenButtonRT = closeUpgradeScreenButton.GetComponent<RectTransform>();
+
         upgradeScreenRT.sizeDelta = new Vector2(0.95f * screenSize.x, 0.4f * screenSize.y);
+        upgradeScreenTitle.rectTransform.sizeDelta =
+            new Vector2(0.9f * upgradeScreenRT.sizeDelta.x, 0.15f * upgradeScreenRT.sizeDelta.y);
+        upgradeScreenTitle.rectTransform.anchoredPosition =
+           new Vector2(0, -0.5f * upgradeScreenTitle.rectTransform.sizeDelta.y);
+        closeUpgradeScreenButtonRT.sizeDelta =
+           new Vector2(0.9f * upgradeScreenRT.sizeDelta.x, 0.1f * upgradeScreenRT.sizeDelta.y);
+        closeUpgradeScreenButtonRT.anchoredPosition = new Vector2(
+            0, 0.5f * closeUpgradeScreenButtonRT.sizeDelta.y + 0.025f * upgradeScreenRT.sizeDelta.y
+        );
 
         for (int i = 0; i < upgradeOptionBackgroundRTs.Length; i++)
         {
             upgradeOptionBackgroundRTs[i].sizeDelta = new Vector2(
-                0.9f * upgradeScreenRT.sizeDelta.x / 3,
-                0.9f * upgradeScreenRT.sizeDelta.y
+                0.84f * upgradeScreenRT.sizeDelta.x / 3,
+                0.7f * upgradeScreenRT.sizeDelta.y
             );
 
             upgradeOptionBackgroundRTs[i].anchoredPosition = new Vector3(
-                (i - 1) * 1.1f * upgradeOptionBackgroundRTs[i].sizeDelta.x,
+                (i - 1) * (upgradeOptionBackgroundRTs[i].sizeDelta.x + 0.06f * upgradeScreenRT.sizeDelta.x / 2),
                 0,
                 0
             );
@@ -71,7 +87,29 @@ public class UI_Manager : MonoBehaviour
                 upgradeOptionBackgroundRTs[i].sizeDelta.x,
                 0.3f * upgradeOptionBackgroundRTs[i].sizeDelta.y
             );
+
+            upgradeOptionButtons[i].GetComponent<RectTransform>().sizeDelta = new Vector2(
+                0.9f * upgradeOptionBackgroundRTs[i].sizeDelta.x,
+                0.15f * upgradeOptionBackgroundRTs[i].sizeDelta.y
+            );
         }
+
+
+
+        customerDialogRT.localScale = 0.0025f * new Vector3(
+            upgradeScreenRT.sizeDelta.x,
+            upgradeScreenRT.sizeDelta.x,
+            upgradeScreenRT.sizeDelta.x
+        );
+
+
+
+        closeUpgradeScreenButton.onClick.AddListener(
+            () =>
+            {
+                upgradeScreenRT.gameObject.SetActive(false);
+            }
+        );
     }
 
     public void OpenHRUpgradeScreen()
@@ -86,6 +124,11 @@ public class UI_Manager : MonoBehaviour
         upgradeOptionButtons[0].onClick.AddListener(resourceManager.UpgradeMoveSpeed);
         upgradeOptionButtons[1].onClick.AddListener(resourceManager.UpgradeMoveSpeed);
         upgradeOptionButtons[2].onClick.AddListener(resourceManager.UpgradeMoveSpeed);*/
+
+        upgradeOptionButtons[0].onClick.RemoveAllListeners();
+        upgradeOptionButtons[1].onClick.RemoveAllListeners();
+        upgradeOptionButtons[2].onClick.RemoveAllListeners();
+        upgradeOptionButtons[2].onClick.AddListener(OnAddStaff);
 
         upgradeScreenRT.gameObject.SetActive(true);
 
@@ -144,7 +187,7 @@ public class UI_Manager : MonoBehaviour
     {
         resourceManager.UpgradePlayerMoveSpeed();
 
-        upgradeOptionTexts[0].text = playerController.speed + " --> " + (1.1f * playerController.speed);
+        upgradeOptionTexts[0].text = (int)playerController.speed + " --> " + (int)(1.1f * playerController.speed);
     }
 
     void OnUpgradePlayerCapacity()
@@ -158,6 +201,33 @@ public class UI_Manager : MonoBehaviour
     {
         resourceManager.UpgradePlayerProfit();
 
-        upgradeOptionTexts[2].text = playerController.profitMultiplier + " --> " + (1.1f * playerController.profitMultiplier);
+        upgradeOptionTexts[2].text = (int)playerController.profitMultiplier + " --> " +
+            (int)(1.1f * playerController.profitMultiplier);
+    }
+
+    void OnUpgradeStaffSpeed()
+    {
+        for (int i = 0; i < npcManager.npcs.Length; i++)
+        {
+            npcManager.npcControllers[i].speed *= 1.1f;
+        }
+
+        upgradeOptionTexts[1].text = (int)npcManager.npcControllers[0].speed + " --> " +
+            (int)(1.1f * npcManager.npcControllers[0].speed);
+    }
+
+    void OnUpgradeStaffCapacity()
+    {
+        for (int i = 0; i < npcManager.npcs.Length; i++)
+        {
+            npcManager.npcControllers[i].capacity++;
+        }
+
+        upgradeOptionTexts[1].text = npcManager.npcControllers[0].capacity + " --> " + (npcManager.npcControllers[0].capacity + 1);
+    }
+
+    void OnAddStaff()
+    {
+        npcManager.AddStaff();
     }
 }

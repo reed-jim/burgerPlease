@@ -31,7 +31,6 @@ public class Table : MonoBehaviour
             {
                 if(playerController.playerState == PlayerState.Ready)
                 {
-                    Debug.Log("trash + " +gameObject);
                     simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
 
                     simulator.tableStates[index] = TableState.EmptyBoth;

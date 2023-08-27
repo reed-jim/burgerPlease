@@ -5,6 +5,8 @@ using UnityEngine;
 public class CashierPosition : MonoBehaviour
 {
     public Simulator simulator;
+    public Util util;
+    public NPC_Manager npcManager;
     public PlayerController playerController;
 
     public GameObject player;
@@ -61,7 +63,7 @@ public class CashierPosition : MonoBehaviour
            }
        }*/
 
-    void OnInside()
+    IEnumerator OnInside()
     {
         if (!isSetColor)
         {
@@ -78,6 +80,20 @@ public class CashierPosition : MonoBehaviour
                 if (simulator.customerStates[i] == CustomerState.FirstQueue
                     && simulator.numFoodAvailableForCustomer() >= simulator.customerNumFoodDemand[i])
                 {
+                    util.SetIdleAnimation(playerController.playerAnimator);
+
+                    yield return new WaitForSeconds(0.2f);
+
+                    player.transform.eulerAngles = new Vector3(0, 180, 0);
+
+                    util.SetCashingAnimation(playerController.playerAnimator);
+
+                    yield return new WaitForSeconds(2f);
+
+                    util.SetCashingFinishAnimation(playerController.playerAnimator);
+
+                    StartCoroutine(util.ScaleUpDownEffect(simulator.counter.transform, 0.15f));
+
                     StartCoroutine(simulator.moveFoodOneByOneToCustomer(
                         simulator.customers[i].transform, i
                     ));
@@ -103,36 +119,37 @@ public class CashierPosition : MonoBehaviour
 
     public IEnumerator CheckCashier()
     {
-        while (true)
+        while (!npcManager.npcs[0].activeInHierarchy)
         {
-          /*  Debug.Log("d " + Mathf.Abs(player.transform.position.x - transform.position.x));*/
-            if (Mathf.Abs(player.transform.position.x - transform.position.x) < size.x / 2
-                && Mathf.Abs(player.transform.position.z - transform.position.z) < size.z / 2)
+            if (Mathf.Abs(player.transform.position.x - transform.position.x) < 1.1f * size.x / 2
+                && Mathf.Abs(player.transform.position.z - transform.position.z) < 1.1f * size.z / 2)
             {
                 if (!isInside)
                 {
                     isSetColor = false;
                 }
 
-                OnInside();
+                StartCoroutine(OnInside());
 
                 isInside = true;
+
+                yield return new WaitForSeconds(3f);
             }
 
-            if (Mathf.Abs(player.transform.position.x - transform.position.x) > size.x / 2 + 1
-                || Mathf.Abs(player.transform.position.z - transform.position.z) > size.z / 2 + 1)
+            if (Mathf.Abs(player.transform.position.x - transform.position.x) > 1.1f * size.x / 2 + 1
+                || Mathf.Abs(player.transform.position.z - transform.position.z) > 1.1f * size.z / 2 + 1)
             {
                 if (isInside)
                 {
                     isSetColor = false;
+
+                    OnOutside();
+
+                    isInside = false;
                 }
-
-                OnOutside();
-
-                isInside = false;
             }
 
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.1f);
         }
     }
 }

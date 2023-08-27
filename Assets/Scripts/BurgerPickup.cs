@@ -39,6 +39,8 @@ public class BurgerPickup : MonoBehaviour
 
         if (other.gameObject.CompareTag("Player"))
         {
+            
+
             StartCoroutine(PickupFoodOneByOneByPlayer());
         }
 
@@ -57,10 +59,15 @@ public class BurgerPickup : MonoBehaviour
         int capacity = controller.capacity;
         int numFoodTaken = controller.numFoodHold;
 
-        util.SetIdleAnimation(controller.animator);
+        util.SetHoldingFoodStandingAnimation(controller.animator);
         controller.humanState = HumanState.PickingFood;
 
         List<int> foodToPickIndexes = simulator.FindAndSortFood("storage" + stoveIndex, false);
+
+        if(foodToPickIndexes.Count > 0)
+        {
+            simulator.foodStorageStates[stoveIndex] = StoveState.PauseSpawn;
+        }
 
         for (int i = 0; i < foodToPickIndexes.Count; i++)
         {
@@ -70,6 +77,7 @@ public class BurgerPickup : MonoBehaviour
             }
 
             int foodIndex = foodToPickIndexes[i];
+            bool isLast = i == foodToPickIndexes.Count - 1 ? true : false;
 
             if (simulator.foodStates[foodIndex] == FoodState.Wait)
             {
@@ -106,10 +114,16 @@ public class BurgerPickup : MonoBehaviour
 
                                if(controller.numFoodHold == 1)
                                {
-                                   util.SetHoldingFoodStandingAnimation(controller.animator);
+                                   
                                }
                                if (controller.numFoodHold == capacity)
                                {
+                                   simulator.foodStorageStates[stoveIndex] = StoveState.Active;
+                                   controller.humanState = HumanState.HoldingFoodMoving;
+                               }
+                               if (isLast && controller.numFoodHold < capacity)
+                               {
+                                   simulator.foodStorageStates[stoveIndex] = StoveState.Active;
                                    controller.humanState = HumanState.HoldingFoodMoving;
                                }
                            }
@@ -124,6 +138,8 @@ public class BurgerPickup : MonoBehaviour
                 }
             }
         }
+
+
 
         if(numFoodTaken == 0)
         {
@@ -156,6 +172,7 @@ public class BurgerPickup : MonoBehaviour
                     if (numFoodTaken == 0)
                     {
                         playerController.playerState = PlayerState.PickingFood;
+                        simulator.foodStorageStates[stoveIndex] = StoveState.PauseSpawn;
                     }
 
                     if (numFoodTaken < capacity)
@@ -188,22 +205,24 @@ public class BurgerPickup : MonoBehaviour
                                    simulator.numFoodOfStorage[stoveIndex]--;
                                    simulator.maxCapacityTMPs[stoveIndex].gameObject.SetActive(false);
 
-                                   if(playerController.numberFoodHold == capacity)
+
+                                   if (playerController.numberFoodHold == 1)
+                                   {
+                                       playerController.playerState = PlayerState.HoldingFoodStanding;
+                                   }
+                                   if (playerController.numberFoodHold == capacity)
                                    {
                                        if(gameProgressManager.progressStep == ProgressStep.PickupFoodTutorial)
                                        {
                                            gameProgressManager.progressStep = ProgressStep.PutFoodOnCounterTutorialStart;
                                        }
 
+                                       simulator.foodStorageStates[stoveIndex] = StoveState.Active;
                                        playerController.playerState = PlayerState.HoldingFoodMoving;
                                    }
-                                   else if (playerController.numberFoodHold == 1)
-                                   {
-                                       playerController.playerState = PlayerState.HoldingFoodStanding;
-                                   }
-                                   
                                    if(isLast && playerController.numberFoodHold < capacity)
                                    {
+                                       simulator.foodStorageStates[stoveIndex] = StoveState.Active;
                                        playerController.playerState = PlayerState.HoldingFoodMoving;
                                    }
                                }

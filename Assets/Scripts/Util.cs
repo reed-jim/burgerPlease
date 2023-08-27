@@ -176,6 +176,16 @@ public class Util : MonoBehaviour
         animator.SetBool("isSitting", false);
     }
 
+    public void SetCashingAnimation(Animator animator)
+    {
+        animator.SetBool("isCashing", true);
+    }
+
+    public void SetCashingFinishAnimation(Animator animator)
+    {
+        animator.SetBool("isCashing", false);
+    }
+
     public void preventOnTriggerTwice(Transform tf, Vector3 objectCenter)
     {
         tf.transform.Translate(tf.forward * 1, Space.World);
@@ -339,5 +349,45 @@ public class Util : MonoBehaviour
 
         transform.localScale = initialScale;
         transform.gameObject.SetActive(false);
+    }
+
+    public IEnumerator GoUpDownEffect(Transform tf)
+    {
+        int phase = 0;
+
+        float height = 3;
+
+        Vector3 initialPos = tf.position;
+
+        while(phase < 3)
+        {
+            Debug.Log(phase);
+            if(phase % 2 == 0)
+            {
+                if(tf.position.y < initialPos.y + height / (phase + 1))
+                {
+                    tf.Translate(new Vector3(0, 0.2f, 0));
+                }
+                else
+                {
+                    phase++;
+                }
+            }
+            else
+            {
+                if (tf.position.y > initialPos.y)
+                {
+                    tf.Translate(new Vector3(0, -0.2f, 0));
+                }
+                else
+                {
+                    phase++;
+                }
+            }
+
+            yield return new WaitForSeconds(0.002f);
+        }
+
+        tf.position = initialPos;
     }
 }

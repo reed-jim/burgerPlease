@@ -23,6 +23,10 @@ public class ResourceManager : MonoBehaviour
         }
 
         simulator.moneyTMP.text = "$" + util.ToShortFormNumber(money);
+        simulator.moneyTMP.rectTransform.sizeDelta =
+                       new Vector2(simulator.moneyTMP.preferredWidth, simulator.moneyTMP.preferredHeight);
+        simulator.moneyBackground.sizeDelta =
+            new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);
     }
 
     // Update is called once per frame

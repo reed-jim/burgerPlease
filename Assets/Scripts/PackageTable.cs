@@ -19,68 +19,6 @@ public class PackageTable : MonoBehaviour
         playerController = player.GetComponent<PlayerController>();
     }
 
-  /*  private void OnTriggerExit(Collider other)
-    {
-        isContinueCheck = false;
-    }*/
-
-    /*private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-
-            if (playerController.playerState == PlayerState.HoldingFoodMoving)
-            {
-                int packageIndex = GetFillingPackageIndex();
-
-                if (packageIndex == -1)
-                {
-                    return;
-                }
-
-                StartCoroutine(MoveFoodOneByOneToPackage(playerController, packageIndex));
-
-                util.SetHoldingFoodStandingAnimation(playerController.playerAnimator);
-
-                playerController.playerState = PlayerState.PackagingFood;
-            }
-            else if (playerController.playerState == PlayerState.Ready)
-            {
-                if (playerController.gameObject.transform.position.x < transform.position.x)
-                {
-                    PickingPackage(playerController);
-                }
-                else
-                {
-                    isContinueCheck = true;
-
-                    StartCoroutine(ContinueCheck(other.transform, playerController));
-                }
-            }
-        }
-        if(other.CompareTag("NPC"))
-        {
-            HumanController npcController = other.GetComponent<HumanController>();
-
-            if (npcController.humanState == HumanState.HoldingFoodMoving)
-            {
-                int packageIndex = GetFillingPackageIndex();
-
-                if (packageIndex == -1)
-                {
-                    return;
-                }
-
-
-                StartCoroutine(MoveFoodOneByOneToPackageByNPC(npcController, packageIndex));
-
-                util.SetHoldingFoodStandingAnimation(npcController.animator);
-
-                npcController.humanState = HumanState.PackagingFood;
-            }
-        }
-    }*/
 
     IEnumerator MoveFoodOneByOneToPackage(PlayerController playerController, int packageIndex)
     {
@@ -185,7 +123,7 @@ public class PackageTable : MonoBehaviour
     {
         int capacity = simulator.numFoodHoldOf(npcController.id);
         int currentMoved = 0;
-
+    
         for (int i = 0; i < simulator.foods.Length; i++)
         {
             int foodIndex = i;
@@ -399,6 +337,7 @@ public class PackageTable : MonoBehaviour
     {
         while(true)
         {
+            // check player
             if(playerController.playerState == PlayerState.Ready)
             {
                 if (player.transform.position.x < transform.position.x + simulator.packageTableSize.x / 2
@@ -435,7 +374,7 @@ public class PackageTable : MonoBehaviour
                     }
                 }
             }
-
+            // check npcs
             for(int i = 0; i < npcManager.npcs.Length; i++)
             {
                 if(npcManager.npcs[i].activeInHierarchy)
@@ -449,14 +388,14 @@ public class PackageTable : MonoBehaviour
                             && Mathf.Abs(npcManager.npcs[i].transform.position.z - transform.position.z) < 20)
                         {
                             int packageIndex = GetFillingPackageIndex();
-
+                      
                             if (packageIndex != -1)
                             {
-                                StartCoroutine(MoveFoodOneByOneToPackageByNPC(npcController, packageIndex));
-
                                 util.SetHoldingFoodStandingAnimation(npcController.animator);
 
                                 npcController.humanState = HumanState.PackagingFood;
+
+                                StartCoroutine(MoveFoodOneByOneToPackageByNPC(npcController, packageIndex));
                             }
                         }
                     }
@@ -484,4 +423,75 @@ public class PackageTable : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
     }
+
+
+
+
+
+
+
+
+
+    /*  private void OnTriggerExit(Collider other)
+      {
+          isContinueCheck = false;
+      }*/
+
+    /*private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            PlayerController playerController = other.GetComponent<PlayerController>();
+
+            if (playerController.playerState == PlayerState.HoldingFoodMoving)
+            {
+                int packageIndex = GetFillingPackageIndex();
+
+                if (packageIndex == -1)
+                {
+                    return;
+                }
+
+                StartCoroutine(MoveFoodOneByOneToPackage(playerController, packageIndex));
+
+                util.SetHoldingFoodStandingAnimation(playerController.playerAnimator);
+
+                playerController.playerState = PlayerState.PackagingFood;
+            }
+            else if (playerController.playerState == PlayerState.Ready)
+            {
+                if (playerController.gameObject.transform.position.x < transform.position.x)
+                {
+                    PickingPackage(playerController);
+                }
+                else
+                {
+                    isContinueCheck = true;
+
+                    StartCoroutine(ContinueCheck(other.transform, playerController));
+                }
+            }
+        }
+        if(other.CompareTag("NPC"))
+        {
+            HumanController npcController = other.GetComponent<HumanController>();
+
+            if (npcController.humanState == HumanState.HoldingFoodMoving)
+            {
+                int packageIndex = GetFillingPackageIndex();
+
+                if (packageIndex == -1)
+                {
+                    return;
+                }
+
+
+                StartCoroutine(MoveFoodOneByOneToPackageByNPC(npcController, packageIndex));
+
+                util.SetHoldingFoodStandingAnimation(npcController.animator);
+
+                npcController.humanState = HumanState.PackagingFood;
+            }
+        }
+    }*/
 }
