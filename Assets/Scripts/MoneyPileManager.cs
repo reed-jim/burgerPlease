@@ -19,6 +19,7 @@ public class MoneyPileManager : MonoBehaviour
 
     public string[] moneyPileBelongTo;
     public MoneyPileState[] moneyPileStates;
+    private MoneyPile[] moneyPileScripts;
 
     public ResourceManager resourceManager;
     public UI_Manager uiManager;
@@ -34,6 +35,7 @@ public class MoneyPileManager : MonoBehaviour
     {
         moneyPileBelongTo = new string[moneyPiles.Length];
         moneyPileStates = new MoneyPileState[moneyPiles.Length];
+        moneyPileScripts = new MoneyPile[moneyPiles.Length];
 
         for (int i = 0; i < moneyPiles.Length; i++)
         {
@@ -41,7 +43,9 @@ public class MoneyPileManager : MonoBehaviour
 
             moneyPiles[i].SetActive(false);
 
-            moneyPiles[i].GetComponent<MoneyPile>().index = i;
+            moneyPileScripts[i] = moneyPiles[i].GetComponent<MoneyPile>();
+
+            moneyPileScripts[i].index = i;
         }
         moneyPileBelongTo = new string[moneyPiles.Length];
 
@@ -50,7 +54,7 @@ public class MoneyPileManager : MonoBehaviour
         unitValue = Random.Range(5, 20);
     }
 
-    public void SpawnMoneyPile(Vector3 spawnPosition, int tableIndex)
+    public void SpawnMoneyPile(Vector3 spawnPosition, int tableIndex, int numFood)
     {
         int moneyPileIndexBelongToTable = GetMoneyIndexBelongToTable(tableIndex);
         int moneyPileIndex;
@@ -64,8 +68,10 @@ public class MoneyPileManager : MonoBehaviour
         moneyPile = moneyPiles[moneyPileIndex];
 
 
-        float yScale = moneyPileIndexBelongToTable == -1 ? Random.Range(3, 12) * 3 :
-            Random.Range(3, 12) * 3 + moneyPile.transform.localScale.y;
+        float yScale = moneyPileIndexBelongToTable == -1 ? 5 * numFood :
+            moneyPile.transform.localScale.y + 5 * numFood;
+
+        yScale = Mathf.Min(100, yScale);
 
         moneyPile.transform.localScale = new Vector3(
             moneyPile.transform.localScale.x,
@@ -81,6 +87,7 @@ public class MoneyPileManager : MonoBehaviour
 
         moneyPile.gameObject.SetActive(true);
 
+        moneyPileScripts[moneyPileIndex].unitValue += numFood;
         moneyPileBelongTo[moneyPileIndex] = "table" + tableIndex;
         moneyPileStates[moneyPileIndex] = MoneyPileState.Active;
 
@@ -140,6 +147,54 @@ public class MoneyPileManager : MonoBehaviour
         moneyPileStates[moneyPileIndex] = MoneyPileState.Active;*/
     }
 
+    public void SpawnMoneyPile(Vector3 spawnPosition, int numFood)
+    {
+        int moneyPileIndexBelongToTakeawayCounter = -1;
+        int moneyPileIndex = -1;
+
+        for (int i = 0; i < moneyPiles.Length; i++)
+        {
+            if (moneyPileBelongTo[i] == "takeawayCounter")
+            {
+                moneyPileIndexBelongToTakeawayCounter = i;
+                moneyPileIndex = i;
+                break;
+            }
+
+            if (i == moneyPiles.Length - 1)
+            {
+                moneyPileIndex = GetAvailableMoneyPile();
+            }
+        }
+
+        GameObject moneyPile;
+
+        moneyPile = moneyPiles[moneyPileIndex];
+
+        float yScale = moneyPileIndexBelongToTakeawayCounter == -1 ? 5 * numFood :
+            moneyPile.transform.localScale.y + 5 * numFood;
+
+        yScale = Mathf.Min(100, yScale);
+
+        moneyPile.transform.localScale = new Vector3(
+            moneyPile.transform.localScale.x,
+            yScale,
+            moneyPile.transform.localScale.z
+        );
+
+        moneyPile.transform.position = new Vector3(
+            spawnPosition.x,
+            0.5f * moneyPile.transform.localScale.y,
+            spawnPosition.z
+        );
+
+        moneyPile.gameObject.SetActive(true);
+
+        moneyPileScripts[moneyPileIndex].unitValue += numFood;
+        moneyPileBelongTo[moneyPileIndex] = "takeawayCounter";
+        moneyPileStates[moneyPileIndex] = MoneyPileState.Active;
+    }
+
     int GetMoneyIndexBelongToTable(int tableIndex)
     {
         for (int i = 0; i < moneyPiles.Length; i++)
@@ -171,7 +226,8 @@ public class MoneyPileManager : MonoBehaviour
         moneyPiles[index].SetActive(false);
         moneyTakenTMP.gameObject.SetActive(false);
 
-        moneyPiles[index].GetComponent<MoneyPile>().totalMoneyTaken = 0;
+        moneyPileScripts[index].totalMoneyTaken = 0;
+        moneyPileScripts[index].unitValue = 0;
         moneyPileBelongTo[index] = "none";
         moneyPileStates[index] = MoneyPileState.NotSpawn;
     }

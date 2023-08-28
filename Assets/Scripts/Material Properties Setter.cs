@@ -5,6 +5,7 @@ using UnityEngine;
 public class MaterialPropertiesSetter : MonoBehaviour
 {
     public Color color;
+    public int materialIndex = -1;
 
     private MaterialPropertyBlock propertyBlock;
 
@@ -17,7 +18,14 @@ public class MaterialPropertiesSetter : MonoBehaviour
 
         propertyBlock.SetColor("_BaseColor", color);
 
-        renderer.SetPropertyBlock(propertyBlock);
+        if(materialIndex == -1)
+        {
+            renderer.SetPropertyBlock(propertyBlock);
+        }
+        else
+        {
+            renderer.SetPropertyBlock(propertyBlock, materialIndex);
+        }
     }
 
     void OnValidate()
@@ -28,7 +36,14 @@ public class MaterialPropertiesSetter : MonoBehaviour
         Renderer renderer = GetComponent<Renderer>();
    
         propertyBlock.SetColor("_BaseColor", color);
-      
-        renderer.SetPropertyBlock(propertyBlock);
+
+        if (materialIndex == -1)
+        {
+            renderer.SetPropertyBlock(propertyBlock);
+        }
+        else
+        {
+            renderer.SetPropertyBlock(propertyBlock, materialIndex);
+        }
     }
 }

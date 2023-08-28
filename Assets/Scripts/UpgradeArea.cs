@@ -59,13 +59,17 @@ public class UpgradeArea : MonoBehaviour
         valueInEachTime = (int)(requireValue / 20);
         fillRateSpeed = ((float)valueInEachTime / requireValue) * FILL_RATE_RANGE;
 
-        StartCoroutine(
-           simulator.PuttingMoneyEffect(
-               player.transform,
-               transform,
-               this
-           )
-        );
+        if (resourceManager.money >= valueInEachTime)
+        {
+            StartCoroutine(
+              simulator.PuttingMoneyEffect(
+                  player.transform,
+                  transform,
+                  this,
+                  valueInEachTime
+              )
+           );
+        }
 
         StartCoroutine(util.ScaleEffect(transform, true, 1.15f * initialScale));
 
@@ -89,7 +93,7 @@ public class UpgradeArea : MonoBehaviour
         {
             if (isInside)
             {
-                if (resourceManager.money > valueInEachTime)
+                if (resourceManager.money >= valueInEachTime)
                 {
                     fillRate += fillRateSpeed;
                     propertyBlock.SetFloat("_FillRate", fillRate);

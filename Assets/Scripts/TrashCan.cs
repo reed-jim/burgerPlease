@@ -75,7 +75,9 @@ public class TrashCan : MonoBehaviour
             {
                 if(gameProgressManager.progressStep == ProgressStep.ThrowTrashTutorial)
                 {
+                    simulator.directionArrowState = DirectionArrowState.Set;
                     gameProgressManager.progressStep = ProgressStep.TutorialComplete;
+                    gameProgressManager.SaveProgressStep();
                 }
 
                 playerController.playerState = PlayerState.Ready;

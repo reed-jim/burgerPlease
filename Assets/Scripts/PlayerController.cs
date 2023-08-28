@@ -97,8 +97,11 @@ public class PlayerController : MonoBehaviour
             }
 
             /*            Move();*/
-            MoveJoystick();
-
+            if(prevIsMove != isMove)
+            {
+                StartCoroutine(MoveJoystick());
+            }
+            
             prevIsMove = true;
         }
         else
@@ -180,7 +183,66 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void MoveJoystick()
+    public IEnumerator MoveJoystick()
+    {
+        bool isFirstTouch = true;
+
+        while(Input.GetMouseButton(0))
+        {
+            // (0,0) of mouse is at bottom-left
+            Vector2 mousePostion = new Vector2(
+                Input.mousePosition.x - Screen.currentResolution.width / 2,
+                Input.mousePosition.y - Screen.currentResolution.height / 2
+            );
+
+            if(isFirstTouch)
+            {
+                joystickOuter.localPosition = mousePostion;
+                joystickInner.localPosition = joystickOuter.localPosition;
+                joystickOuter.gameObject.SetActive(true);
+
+                isFirstTouch = false;
+            }
+            else
+            {
+                Vector2 direction = 1f * new Vector2(mousePostion.x - joystickOuter.localPosition.x,
+                    mousePostion.y - joystickOuter.localPosition.y);
+
+                if (direction.x > 100) direction.x = 100;
+                if (direction.y > 100) direction.y = 100;
+                if (direction.x < -100) direction.x = -100;
+                if (direction.y < -100) direction.y = -100;
+
+                joystickInner.anchoredPosition = new Vector3(
+                    direction.x,
+                    direction.y,
+                    joystickInner.localPosition.z
+                );
+
+                Vector3 point1 = mainCamera.ScreenToWorldPoint(new Vector3(
+                    joystickInner.anchoredPosition.x,
+                    joystickInner.anchoredPosition.y,
+                    0
+                ));
+
+                Vector3 point2 = mainCamera.ScreenToWorldPoint(Vector3.zero);
+
+                Vector3 playerDirection = new Vector3(point1.x - point2.x, 0, point1.z - point2.z);
+
+                if(playerDirection != Vector3.zero)
+                {
+                    transform.rotation = Quaternion.LookRotation(playerDirection);
+                }
+
+                playerRigidbody.velocity = transform.forward * speed;
+            }
+
+            yield return new WaitForSeconds(0.002f);
+        }
+
+        joystickOuter.gameObject.SetActive(false);
+    }
+    /*public void MoveJoystick()
     {
         // (0,0) of mouse is at bottom-left
         Vector2 mousePostion = new Vector2(
@@ -191,7 +253,7 @@ public class PlayerController : MonoBehaviour
         Vector2 direction = 1f * new Vector2(mousePostion.x - joystickOuter.localPosition.x,
             mousePostion.y - joystickOuter.localPosition.y);
 
-       /* if(Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+       *//* if(Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
         {
             if(direction.x > 0)
             {
@@ -212,7 +274,7 @@ public class PlayerController : MonoBehaviour
             {
                 direction.y = -100;
             }
-        }*/
+        }*//*
 
         if (direction.x > 100) direction.x = 100;
         if (direction.y > 100) direction.y = 100;
@@ -237,5 +299,5 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(playerDirection);
 
         playerRigidbody.velocity = transform.forward * speed;
-    }
+    }*/
 }

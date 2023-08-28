@@ -471,11 +471,41 @@ public class Simulator : MonoBehaviour
         StartCoroutine(LoadGame());
         StartCoroutine(DirectPlayer());
 
-        if (!gameProgressManager.isEnableTutorial || gameProgressManager.progressStep != ProgressStep.CreateGate)
+        if (!gameProgressManager.isEnableTutorial)
         {
             StartCoroutine(FastDebugGame());
         }
+
+        if (gameProgressManager.progressStep == ProgressStep.TutorialComplete
+            || gameProgressManager.progressStep == ProgressStep.DoneBasic)
+        {
+            StartCoroutine(StartAllGameSimulation());
+        }
     }
+
+    IEnumerator StartAllGameSimulation()
+    {
+        yield return new WaitForSeconds(1f);
+
+        gate.SetActive(true);
+        stoves[0].SetActive(true);
+
+        StartCoroutine(SpawnCustomer());
+        StartCoroutine(SpawnFood(0));
+        StartCoroutine(SpawnPackage());
+        StartCoroutine(SpawnCar());
+
+        StartCoroutine(SimulateCustomerCycle());
+        StartCoroutine(SimulateCustomerMoving());
+        StartCoroutine(SimulateFoodCycle());
+        StartCoroutine(SimulatePackageCycle());
+        StartCoroutine(SimulateCarCycle());
+        StartCoroutine(SimulateTrashCycle());
+        StartCoroutine(cashierPosition.GetComponent<CashierPosition>().CheckCashier());
+
+        StartCoroutine(packageTable.GetComponent<PackageTable>().CheckHumanAction());
+    }
+
 
     IEnumerator FastDebugGame()
     {
@@ -659,7 +689,7 @@ public class Simulator : MonoBehaviour
 
                     customerStates[i] = CustomerState.GoInside;
                 }
-                if (customerStates[i] == CustomerState.GoInside)
+                else if (customerStates[i] == CustomerState.GoInside)
                 {
                     float zLimit = zLimits[i];
 
@@ -686,6 +716,13 @@ public class Simulator : MonoBehaviour
                         {
                             customerStates[i] = CustomerState.Waiting;
                         }
+                    }
+                }
+                else if (customerStates[i] == CustomerState.FirstQueue)
+                {
+                    if (npcManager.npcs[0].activeInHierarchy)
+                    {
+                        StartCoroutine(AutoCashier(i));
                     }
                 }
                 else if (customerStates[i] == CustomerState.Leaving)
@@ -805,7 +842,7 @@ public class Simulator : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.005f);
+            yield return new WaitForSeconds(0.003f);
         }
     }
 
@@ -962,6 +999,15 @@ public class Simulator : MonoBehaviour
                                                     resetFoodProperties(k);
                                                 }
                                             }
+
+                                            moneyPileManager.SpawnMoneyPile(
+                                                new Vector3(
+                                                    takeawayCounter.transform.position.x,
+                                                    0,
+                                                    takeawayCounter.transform.position.z - 0.8f * takeawayCounterSize.z
+                                                ),
+                                                4
+                                            );
 
                                             carStates[carIndex] = CarState.Done;
                                         }
@@ -1484,6 +1530,7 @@ public class Simulator : MonoBehaviour
 
         ResetUpgradeAreaProperties(0);
 
+
         upgradeAreaScripts[0].SetSizeEqualTo(new Vector3(3 * tableSize.x, 1, 1.2f * tableSize.z),
             tables[0].transform.localScale);
 
@@ -1495,6 +1542,7 @@ public class Simulator : MonoBehaviour
             tables[0].transform.position.z
         );
         SpawnUpgradeArea(spawnPosition, UpgradeAreaFunction.CreateFirstTable, 200);
+
 
         gameProgressManager.progressStep = ProgressStep.CreateFirstTable;
         directionArrowState = DirectionArrowState.Set;
@@ -1868,6 +1916,7 @@ public class Simulator : MonoBehaviour
 
     public void ResetCarProperties(int index)
     {
+        cars[index].transform.eulerAngles = new Vector3(0, 270, 0);
         cars[index].SetActive(false);
         carStates[index] = CarState.NotSpawn;
     }
@@ -2087,7 +2136,7 @@ public class Simulator : MonoBehaviour
     }
 
     public IEnumerator PuttingMoneyEffect(Transform fromTf, Transform toTf,
-        UpgradeArea upgradeAreaScript)
+        UpgradeArea upgradeAreaScript, int valueInEachTime)
     {
         bool[] isEffectMoneyUsed = new bool[effectMoneys.Length];
 
@@ -2096,7 +2145,7 @@ public class Simulator : MonoBehaviour
             isEffectMoneyUsed[i] = false;
         }
 
-        while (upgradeAreaScript.isInside)
+        while (upgradeAreaScript.isInside && resourceManager.money >= valueInEachTime)
         {
             for (int i = 0; i < effectMoneys.Length; i++)
             {
@@ -2286,7 +2335,8 @@ public class Simulator : MonoBehaviour
                 {
                     nextPoint = trashCan.transform.position;
                 }
-                else if (gameProgressManager.progressStep == ProgressStep.TutorialComplete)
+                else if (gameProgressManager.progressStep == ProgressStep.TutorialComplete
+                    || gameProgressManager.progressStep == ProgressStep.DoneBasic)
                 {
                     Destroy(directionArrow);
                     break;
@@ -2405,7 +2455,8 @@ public class Simulator : MonoBehaviour
                     0,
                     tables[tableIndex].transform.position.z - tableSize.z - 6
                 ),
-                tableIndex
+                tableIndex,
+                customerNumFoodDemand[customerIndex]
             );
 
             util.SetMovingAnimation(customers[customerIndex].GetComponent<Animator>());
@@ -2471,7 +2522,7 @@ public class Simulator : MonoBehaviour
             {
                 /*deltaDistance = distance / 7f;*/
 
-                deltaDistance = new Vector3(1.2f, 2f, 1.2f);
+                deltaDistance = new Vector3(1.5f, 2f, 1.5f);
 
                 deltaDistance.x = direction.x > 0 ? deltaDistance.x : -deltaDistance.x;
                 deltaDistance.y = direction.y > 0 ? deltaDistance.y : -deltaDistance.y;

@@ -17,7 +17,7 @@ public class MoneyPile : MonoBehaviour
 
     public AudioSource takingMoneySound;
 
-    private int unitValue;
+    public int unitValue = 0;
     public int totalMoneyTaken = 0;
 
     public int index;
@@ -73,10 +73,6 @@ public class MoneyPile : MonoBehaviour
         {
             Vector3 moneyPileSize = gameObject.GetComponent<MeshRenderer>().bounds.size;
 
-            unitValue = ((int)(gameObject.transform.localScale.y * 0.05f));
-            /*uiManager.moneyTakenTMP[index].transform.position = new Vector3(
-                transform.position.x, transform.position.y + 1.5f * moneyPileSize.y, transform.position.z
-            );*/
             uiManager.moneyTakenTMP.gameObject.SetActive(true);
 
             takingMoneySound.Play();

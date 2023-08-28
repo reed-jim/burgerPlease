@@ -28,6 +28,8 @@ public class GameProgressManager : MonoBehaviour
 {
     public Simulator simulator;
     public NPC_Manager npc_Manager;
+    public ResourceManager resourceManager;
+    public PlayerController playerController;
     public Util util;
 
     public bool isEnableTutorial;
@@ -47,20 +49,24 @@ public class GameProgressManager : MonoBehaviour
 
     void Start()
     {
+        LoadGame();
+
         if (isEnableTutorial)
         {
             StartCoroutine(Progressing());
         }
+
+        StartCoroutine(SaveGame());
     }
 
     IEnumerator Progressing()
     {
+        yield return new WaitForSeconds(1f);
+
         while (true)
         {
             if (progressStep == ProgressStep.CreateGate)
             {
-                yield return new WaitForSeconds(1f);
-
                 simulator.DisableObjectsForCreateGateStep();
 
                 simulator.upgradeAreas[0].transform.localScale = new Vector3(
@@ -116,7 +122,7 @@ public class GameProgressManager : MonoBehaviour
                         break;
                     }
 
-                    if(i == simulator.tables.Length - 1)
+                    if (i == simulator.tables.Length - 1)
                     {
                         simulator.tutorialArrow.SetActive(false);
                         simulator.tutorialText.gameObject.SetActive(false);
@@ -250,6 +256,83 @@ public class GameProgressManager : MonoBehaviour
             }
 
             yield return new WaitForSeconds(0.4f);
+        }
+    }
+
+    IEnumerator SaveGame()
+    {
+        while(true)
+        {
+            PlayerPrefs.SetString("progressStep", progressStep.ToString());
+
+            yield return new WaitForSeconds(0.5f);
+
+            PlayerPrefs.SetInt("money", resourceManager.money);
+
+            PlayerPrefs.SetInt("playerCapacity", playerController.capacity);
+            PlayerPrefs.SetFloat("playerSpeed", playerController.speed);
+            PlayerPrefs.SetFloat("playerProfitMultiplier", playerController.profitMultiplier);
+
+            yield return new WaitForSeconds(0.5f);
+
+            for (int i = 0; i < npc_Manager.npcs.Length; i++)
+            {
+                if (npc_Manager.npcs[i].activeInHierarchy)
+                {
+                    PlayerPrefs.SetInt("npcActive" + i, 1);
+                    PlayerPrefs.SetInt("npcCapacity" + i, npc_Manager.npcControllers[i].capacity);
+                    PlayerPrefs.SetFloat("npcSpeed" + i, npc_Manager.npcControllers[i].speed);
+                }
+                else
+                {
+                    PlayerPrefs.SetInt("npcActive" + i, 0);
+                }
+
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            yield return new WaitForSeconds(20f);
+        }
+    }
+
+    public void SaveProgressStep()
+    {
+        PlayerPrefs.SetString("progressStep", progressStep.ToString());
+    }
+
+    void LoadGame()
+    {
+        bool isGameSavedOnce = PlayerPrefs.GetString("progressStep", "") == "" ? false : true;
+
+        if (isGameSavedOnce)
+        {
+            progressStep = (ProgressStep)System.Enum.Parse(typeof(ProgressStep), PlayerPrefs.GetString("progressStep"));
+
+            resourceManager.money = PlayerPrefs.GetInt("money");
+
+            playerController.capacity = Mathf.Max(PlayerPrefs.GetInt("playerCapacity"), playerController.capacity);
+            playerController.speed = Mathf.Max(PlayerPrefs.GetFloat("playerSpeed"), playerController.speed);
+            playerController.profitMultiplier = PlayerPrefs.GetFloat("playerProfitMultiplier");
+
+            for (int i = 0; i < npc_Manager.npcs.Length; i++)
+            {
+                bool isActive = PlayerPrefs.GetInt("npcActive", 0) == 1 ? true : false;
+
+                if (isActive)
+                {
+                    if (i == 0)
+                    {
+                        npc_Manager.SpawnCashier();
+                    }
+                    else
+                    {
+                        npc_Manager.AddStaff();
+                    }
+
+                    npc_Manager.npcControllers[i].capacity = PlayerPrefs.GetInt("npcCapacity");
+                    npc_Manager.npcControllers[i].speed = PlayerPrefs.GetInt("npcSpeed");
+                }
+            }
         }
     }
 }
