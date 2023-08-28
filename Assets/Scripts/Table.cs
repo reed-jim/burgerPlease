@@ -20,7 +20,7 @@ public class Table : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
@@ -29,18 +29,35 @@ public class Table : MonoBehaviour
         {
             if (other.CompareTag("Player"))
             {
-                if(playerController.playerState == PlayerState.Ready)
+                if (playerController.playerState == PlayerState.Ready)
                 {
                     simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
 
                     simulator.tableStates[index] = TableState.EmptyBoth;
 
-                    StartCoroutine(
-                        simulator.moveTrashOneByOne(
-                            "player",
-                            player.transform,
-                            index
-                        )
+                    simulator.moveTrashOneByOneByPlayer(
+                         "player",
+                         player.transform,
+                         index
+                     );
+                }
+            }
+            if (other.CompareTag("NPC"))
+            {
+                HumanController humanController = other.GetComponent<HumanController>();
+
+                if (humanController.humanState == HumanState.Moving)
+                {
+                    simulator.RotateChairs(index, new Vector3(0, 90, 0), new Vector3(0, 270, 0));
+
+                    simulator.tableStates[index] = TableState.EmptyBoth;
+
+                    humanController.SetNextStateAfterMoving(HumanState.PickingTrash);
+
+                    simulator.moveTrashOneByOneByNPC(
+                        humanController.id,
+                        other.transform,
+                        index
                     );
                 }
             }

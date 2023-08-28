@@ -132,6 +132,7 @@ public class Simulator : MonoBehaviour
     public GameObject bowl;
     public GameObject packageTable;
     public GameObject takeawayCounter;
+    public GameObject trashCan;
     public GameObject tutorialArrow;
     public GameObject directionArrow;
 
@@ -457,7 +458,6 @@ public class Simulator : MonoBehaviour
         }
         takeawayCounterSize = takeawayCounter.GetComponent<MeshRenderer>().bounds.size;
         tableSize = tables[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size;
-        tableSize.y *= 9;
 
         officeDeskSize.x = officeDesk[0].transform.GetChild(0).GetComponent<MeshRenderer>().bounds.size.x
             + officeDesk[0].transform.GetChild(1).GetComponent<MeshRenderer>().bounds.size.x;
@@ -519,9 +519,9 @@ public class Simulator : MonoBehaviour
                         if (tableStates[j] == TableState.EmptyBoth)
                         {
                             destination = new Vector3(
-                                tables[j].transform.position.x - 4,
+                                tables[j].transform.position.x - 11,
                                 customers[i].transform.position.y,
-                                tables[j].transform.position.z + tableSize.z / 2
+                                tables[j].transform.position.z
                                 );
 
                             tableStates[j] = TableState.EmptyRight;
@@ -531,9 +531,9 @@ public class Simulator : MonoBehaviour
                         else if (tableStates[j] == TableState.EmptyLeft)
                         {
                             destination = new Vector3(
-                                tables[j].transform.position.x - 4,
+                                tables[j].transform.position.x - 11,
                                 customers[i].transform.position.y,
-                                tables[j].transform.position.z + tableSize.z / 2
+                                tables[j].transform.position.z
                                 );
 
                             tableStates[j] = TableState.Full;
@@ -543,9 +543,9 @@ public class Simulator : MonoBehaviour
                         else if (tableStates[j] == TableState.EmptyRight)
                         {
                             destination = new Vector3(
-                                tables[j].transform.position.x + tableSize.x + 4,
+                                tables[j].transform.position.x + 11,
                                 customers[i].transform.position.y,
-                                tables[j].transform.position.z + tableSize.z / 2
+                                tables[j].transform.position.z
                                 );
 
                             tableStates[j] = TableState.Full;
@@ -630,7 +630,7 @@ public class Simulator : MonoBehaviour
         {
             for (int i = 0; i < customers.Length; i++)
             {
-                if(customerStates[i] == CustomerState.SetDestination)
+                if (customerStates[i] == CustomerState.SetDestination)
                 {
                     if (customerList.Count > 1)
                     {
@@ -677,7 +677,7 @@ public class Simulator : MonoBehaviour
 
                             customerStates[i] = CustomerState.FirstQueue;
 
-                            if(npcManager.npcs[0].activeInHierarchy)
+                            if (npcManager.npcs[0].activeInHierarchy)
                             {
                                 StartCoroutine(AutoCashier(i));
                             }
@@ -840,7 +840,7 @@ public class Simulator : MonoBehaviour
                             cars[i].transform.position.z
                         );
                     }
-                    else if(cars[carNextToIndex].transform.position.z < 170)
+                    else if (cars[carNextToIndex].transform.position.z < 170)
                     {
                         nextPositions[i] = new Vector3(
                             -20 + 40,
@@ -1033,6 +1033,18 @@ public class Simulator : MonoBehaviour
                             + new Vector3(0, 10 + trashColumnIndex[i] * trashSize.y, 0)
                             + player.transform.forward * 4;
                     }
+                    else
+                    {
+                        for (int j = 0; j < npcManager.npcs.Length; j++)
+                        {
+                            if (trashBelongTo[i] == npcManager.npcControllers[j].id)
+                            {
+                                trashs[i].transform.position = npcManager.npcs[j].transform.position
+                                    + new Vector3(0, 10 + trashColumnIndex[i] * trashSize.y, 0)
+                                    + npcManager.npcs[j].transform.forward * 4;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1085,7 +1097,7 @@ public class Simulator : MonoBehaviour
         {
             for (int i = 0; i < foods.Length - 14; i++)
             {
-                if(foodStorageStates[stoveIndex] == StoveState.PauseSpawn)
+                if (foodStorageStates[stoveIndex] == StoveState.PauseSpawn)
                 {
                     break;
                 }
@@ -1517,7 +1529,7 @@ public class Simulator : MonoBehaviour
 
         ResetUpgradeAreaProperties(upgradeAreaIndex);
 
-        if(!tables[tables.Length - 1].activeInHierarchy)
+        if (!tables[tables.Length - 1].activeInHierarchy)
         {
             gameProgressManager.isTableUpgradeSpawn = false;
         }
@@ -1568,8 +1580,8 @@ public class Simulator : MonoBehaviour
         StartCoroutine(SimulateTrashCycle());
         StartCoroutine(cashierPosition.GetComponent<CashierPosition>().CheckCashier());
 
-        gameProgressManager.progressStep = ProgressStep.PickupFoodTutorialStart;
         directionArrowState = DirectionArrowState.Set;
+        gameProgressManager.progressStep = ProgressStep.PickupFoodTutorialStart;
     }
 
     void OnPackageTableUpgraded(int upgradeAreaIndex)
@@ -1609,6 +1621,9 @@ public class Simulator : MonoBehaviour
         ResetUpgradeAreaProperties(upgradeAreaIndex);
     }
 
+
+
+
     public IEnumerator moveFoodOneByOneToCustomer(Transform customerTf, int customerIndex)
     {
         List<int> satisfiedfoodIndexes = new List<int>();
@@ -1638,7 +1653,7 @@ public class Simulator : MonoBehaviour
         {
             int foodIndex = satisfiedfoodIndexes[i];
 
-            if (numFoodHoldOf("customer" + customerIndex) < 2)
+            if (numFoodHoldOf("customer" + customerIndex) < customerNumFoodDemand[customerIndex])
             {
                 foodBelongTo[foodIndex] = "customer" + customerIndex;
 
@@ -1668,7 +1683,8 @@ public class Simulator : MonoBehaviour
                             {
                                 if (gameProgressManager.progressStep == ProgressStep.CashierTutorial)
                                 {
-                                    gameProgressManager.progressStep = ProgressStep.TutorialComplete;
+                                    directionArrowState = DirectionArrowState.Set;
+                                    gameProgressManager.progressStep = ProgressStep.PickTrashTutorialStart;
                                 }
 
                                 customerStates[customerIndex] = CustomerState.ChooseTable;
@@ -1688,7 +1704,7 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    public IEnumerator moveTrashOneByOne(string owner, Transform targetTf, int tableIndex)
+    public IEnumerator moveTrashOneByOne(string owner, Transform targetTf, int tableIndex, OnTrashPickedUp onTrashPickedUp)
     {
         int capacity = 2;
         int numTake = 0;
@@ -1714,6 +1730,8 @@ public class Simulator : MonoBehaviour
                 trashBelongTo[i] = owner;
                 trashStates[i] = TrashState.Picking;
 
+                int numTakeLocalScope = numTake;
+
                 StartCoroutine(
                         CurveMove(
                             trashs[i].transform,
@@ -1726,18 +1744,7 @@ public class Simulator : MonoBehaviour
                             0,
                             () =>
                             {
-                                if (numTake == 1)
-                                {
-                                    playerController.playerState = PlayerState.HoldingTrashStanding;
-                                }
-                                if (numTake == capacity)
-                                {
-                                    playerController.playerState = PlayerState.HoldingTrashMoving;
-                                }
-                                if (numTake > 0 && trashIndex == trashs.Length - 1)
-                                {
-                                    playerController.playerState = PlayerState.HoldingTrashMoving;
-                                }
+                                onTrashPickedUp(numTakeLocalScope, trashIndex, capacity);
 
                                 trashStates[trashIndex] = TrashState.Holding;
                             }
@@ -1748,6 +1755,60 @@ public class Simulator : MonoBehaviour
             }
         }
     }
+
+    public void moveTrashOneByOneByPlayer(string owner, Transform targetTf, int tableIndex)
+    {
+        StartCoroutine(moveTrashOneByOne(
+            owner,
+            targetTf,
+            tableIndex,
+            (numTake, trashIndex, capacity) =>
+            {
+                if (numTake == 1)
+                {
+                    playerController.playerState = PlayerState.HoldingTrashStanding;
+                }
+                if (numTake == capacity)
+                {
+                    if (gameProgressManager.progressStep == ProgressStep.PickTrashTutorial)
+                    {
+                        directionArrowState = DirectionArrowState.Set;
+                        gameProgressManager.progressStep = ProgressStep.ThrowTrashTutorialStart;
+                    }
+
+                    playerController.playerState = PlayerState.HoldingTrashMoving;
+                }
+                if (numTake > 0 && trashIndex == trashs.Length - 1)
+                {
+                    playerController.playerState = PlayerState.HoldingTrashMoving;
+                }
+            }
+        ));
+    }
+
+    public void moveTrashOneByOneByNPC(string owner, Transform targetTf, int tableIndex)
+    {
+        StartCoroutine(moveTrashOneByOne(
+            owner,
+            targetTf,
+            tableIndex,
+            (numTake, trashIndex, capacity) =>
+            {
+                int npcIndex = int.Parse(owner[3].ToString());
+
+                if (numTake == capacity)
+                {
+                    npcManager.npcControllers[npcIndex].humanState = HumanState.HoldingAndMoving;
+                }
+                if (numTake > 0 && trashIndex == trashs.Length - 1)
+                {
+                    npcManager.npcControllers[npcIndex].humanState = HumanState.HoldingAndMoving;
+                }
+            }
+        ));
+    }
+
+    public delegate void OnTrashPickedUp(int numTake, int trashIndex, int capacity);
 
     IEnumerator MoveFoodOneByOneToTable(int customerIndex, int tableIndex)
     {
@@ -1762,10 +1823,10 @@ public class Simulator : MonoBehaviour
                 foodColumnIndex[j] = numFoodHoldOf("table" + tableIndex, true) - 1;
 
                 Vector3 end = new Vector3(
-                    tables[tableIndex].transform.position.x + tableSize.x / 2,
-                    tables[tableIndex].transform.position.y + tableSize.y
+                    tables[tableIndex].transform.position.x,
+                    tables[tableIndex].transform.position.y + tableSize.y / 2
                     + foodColumnIndex[j] * foodSize.y,
-                    tables[tableIndex].transform.position.z + tableSize.z / 2
+                    tables[tableIndex].transform.position.z
                 );
 
                 StartCoroutine(
@@ -1974,7 +2035,7 @@ public class Simulator : MonoBehaviour
                 if (isEffectMoneyUsed[i] == false)
                 {
                     int col = 3;
-                    int row = 3;
+                    /* int row = 3;*/
                     int x = moneyPileGridIndex % col;
                     int y = (moneyPileGridIndex - moneyPileGridIndex % col) / col;
 
@@ -2170,6 +2231,8 @@ public class Simulator : MonoBehaviour
         {
             if (directionArrowState == DirectionArrowState.Set)
             {
+                bool isSet = true;
+
                 if (isFirstTime)
                 {
                     yield return new WaitForSeconds(2f);
@@ -2179,23 +2242,62 @@ public class Simulator : MonoBehaviour
 
                 if (gameProgressManager.progressStep == ProgressStep.CreateFirstTable)
                 {
-                    nextPoint = tables[0].transform.position + new Vector3(0, 10, 0);
+                    nextPoint = tables[0].transform.position;
                 }
                 else if (gameProgressManager.progressStep == ProgressStep.CreateStove)
                 {
-                    nextPoint = stoves[0].transform.position + new Vector3(0, 10, 0);
+                    nextPoint = stoves[0].transform.position;
                 }
                 else if (gameProgressManager.progressStep == ProgressStep.CreateCounter)
                 {
-                    nextPoint = counter.transform.position + new Vector3(0, 10, 0);
+                    nextPoint = counter.transform.position;
                 }
-                else if (gameProgressManager.progressStep == ProgressStep.PickupFoodTutorialStart)
+                else if (gameProgressManager.progressStep == ProgressStep.PickupFoodTutorialStart
+                    || gameProgressManager.progressStep == ProgressStep.PickupFoodTutorial)
+                {
+                    nextPoint = foods[0].transform.position;
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.PutFoodOnCounterTutorialStart
+                    || gameProgressManager.progressStep == ProgressStep.PutFoodOnCounterTutorial)
+                {
+                    nextPoint = bowl.transform.position;
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.CashierTutorialStart
+                    || gameProgressManager.progressStep == ProgressStep.CashierTutorial)
+                {
+                    nextPoint = cashierPosition.transform.position;
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.PickTrashTutorialStart
+                    || gameProgressManager.progressStep == ProgressStep.PickTrashTutorial)
+                {
+                    if (tableStates[0] == TableState.Dirty)
+                    {
+                        nextPoint = tables[0].transform.position;
+                    }
+                    else
+                    {
+                        isSet = false;
+
+                        yield return new WaitForSeconds(2f);
+                    }
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.ThrowTrashTutorialStart
+                    || gameProgressManager.progressStep == ProgressStep.ThrowTrashTutorial)
+                {
+                    nextPoint = trashCan.transform.position;
+                }
+                else if (gameProgressManager.progressStep == ProgressStep.TutorialComplete)
                 {
                     Destroy(directionArrow);
                     break;
                 }
 
-                directionArrowState = DirectionArrowState.Directing;
+                if (isSet)
+                {
+                    nextPoint += new Vector3(0, 8, 0);
+
+                    directionArrowState = DirectionArrowState.Directing;
+                }
             }
             else if (directionArrowState == DirectionArrowState.Directing)
             {
@@ -2285,9 +2387,9 @@ public class Simulator : MonoBehaviour
             if (isDirty)
             {
                 SpawnTrash(
-                    new Vector3(tablePosition.x + tableSize.x / 2,
-                    tablePosition.y + tableSize.y,
-                    tablePosition.z + tableSize.z / 2),
+                    new Vector3(tablePosition.x,
+                    tablePosition.y + tableSize.y / 2,
+                    tablePosition.z),
                     "table" + tableIndex
                 );
 
@@ -2367,7 +2469,9 @@ public class Simulator : MonoBehaviour
 
             if (!isDeltaDistanceSet)
             {
-                deltaDistance = distance / 7f;
+                /*deltaDistance = distance / 7f;*/
+
+                deltaDistance = new Vector3(1.2f, 2f, 1.2f);
 
                 deltaDistance.x = direction.x > 0 ? deltaDistance.x : -deltaDistance.x;
                 deltaDistance.y = direction.y > 0 ? deltaDistance.y : -deltaDistance.y;
@@ -2441,11 +2545,6 @@ public class Simulator : MonoBehaviour
         tf.position = end;
 
         callback();
-    }
-
-    void setCustomerMoving(int index, bool isMoving)
-    {
-        util.SetMovingAnimation(customers[index].GetComponent<Animator>());
     }
 
     void arrangeFoodYPosition(float minYPos, string ownerName, bool isContain = false)
@@ -2597,19 +2696,26 @@ public class Simulator : MonoBehaviour
 
     IEnumerator AutoCashier(int customerIndex)
     {
-        GameObject cashier = npcManager.npcs[0];
-        Animator cashierAnimator = npcManager.npcControllers[0].animator;
-
-        util.SetCashingAnimation(cashierAnimator);
-
-        yield return new WaitForSeconds(2f);
-
-        util.SetCashingFinishAnimation(cashierAnimator);
-
-        StartCoroutine(util.ScaleUpDownEffect(counter.transform, 0.15f));
-
-        StartCoroutine(moveFoodOneByOneToCustomer(customers[customerIndex].transform, customerIndex));
-
         customerStates[customerIndex] = CustomerState.PickingFood;
+
+        while (customerStates[customerIndex] == CustomerState.PickingFood)
+        {
+            if (numFoodHoldOf("counter") > 0)
+            {
+                Animator cashierAnimator = npcManager.npcControllers[0].animator;
+
+                util.SetCashingAnimation(cashierAnimator);
+
+                yield return new WaitForSeconds(2f);
+
+                util.SetCashingFinishAnimation(cashierAnimator);
+
+                StartCoroutine(util.ScaleUpDownEffect(counter.transform, 0.15f));
+
+                StartCoroutine(moveFoodOneByOneToCustomer(customers[customerIndex].transform, customerIndex));
+            }
+
+            yield return new WaitForSeconds(3f);
+        }
     }
 }

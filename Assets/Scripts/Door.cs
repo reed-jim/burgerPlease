@@ -9,8 +9,6 @@ public class Door : MonoBehaviour
     private bool isOpening = false;
     private bool isClosing = false;
 
-    private bool isStopCheckingCollision = false;
-
     public float deltaAngle;
 
     private void Start()
@@ -94,15 +92,14 @@ public class Door : MonoBehaviour
         }
     }
 
-    IEnumerator StopCheckingCollision()
+/*    IEnumerator StopCheckingCollision()
     {
-        Debug.Log("stop");
         isStopCheckingCollision = true;
 
         yield return new WaitForSeconds(0.05f);
 
         isStopCheckingCollision = false;
-    }
+    }*/
 
     IEnumerator CheckColision()
     {

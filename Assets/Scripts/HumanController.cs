@@ -8,11 +8,13 @@ public enum HumanState
     Moving,
     CashierWaiting,
     PickingFood,
-    HoldingFoodMoving,
     PickingPackage,
-    HoldingPackageMoving,
+    PickingTrash,
     PackagingFood,
-    MovedAllFoodToPackage,
+    HoldingAndStanding,
+    HoldingAndMoving,
+    HoldingPackageMoving,
+    MovedAllFoodToPackage
 }
 
 public enum Task
@@ -21,7 +23,8 @@ public enum Task
     Cashier,
     ServingFood,
     PackagingFood,
-    DeliverTakeawayFood
+    DeliverTakeawayFood,
+    CleaningTrash
 }
 
 public class HumanController : MonoBehaviour
@@ -110,6 +113,24 @@ public class HumanController : MonoBehaviour
 
                     humanState = HumanState.Moving;
                 }
+                else if (task == Task.CleaningTrash)
+                {
+                    for (int i = 0; i < simulator.trashs.Length; i++)
+                    {
+                        if (simulator.trashStates[i] == TrashState.OnTable)
+                        {
+                            movingDestination = new Vector3(
+                                simulator.trashs[i].transform.position.x,
+                                transform.position.y,
+                                simulator.trashs[i].transform.position.z
+                            );
+
+                            break;
+                        }
+                    }
+
+                    humanState = HumanState.Moving;
+                }
                 else if(task == Task.Nothing)
                 {
                     yield return new WaitForSeconds(0.2f);
@@ -122,15 +143,13 @@ public class HumanController : MonoBehaviour
                     transform.LookAt(movingDestination);
 
                     util.SetMovingAnimation(animator);
-                }
-                else
-                {
+
                     setOnetimeValues = false;
                 }
 
                 transform.Translate(transform.forward * speed * deltaTime, Space.World);
             }
-            else if (humanState == HumanState.HoldingFoodMoving)
+            else if (humanState == HumanState.HoldingAndMoving)
             {
                 if (setOnetimeValues)
                 {
@@ -159,6 +178,14 @@ public class HumanController : MonoBehaviour
                             simulator.takeawayCounter.transform.position.z
                         );
                     }
+                    else if (task == Task.CleaningTrash)
+                    {
+                        movingDestination = new Vector3(
+                            simulator.trashCan.transform.position.x,
+                            transform.position.y,
+                            simulator.trashCan.transform.position.z
+                        );
+                    }
 
                     transform.LookAt(movingDestination);
 
@@ -183,7 +210,7 @@ public class HumanController : MonoBehaviour
         bool isOtherServingFood = false;
         bool isOtherPackagingFood = false;
         bool isOtherDeliverTakeawayFood = false;
-        bool isOtherPickingTrash = false;
+        bool isOtherCleaningTrash = false;
 
         for (int i = 0; i < npcManager.npcs.Length; i++)
         {
@@ -199,10 +226,10 @@ public class HumanController : MonoBehaviour
             {
                 isOtherDeliverTakeawayFood = true;
             }
-/*            if (npcManager.npcControllers[i].task == Task.P)
+            if (npcManager.npcControllers[i].task == Task.CleaningTrash)
             {
-
-            }*/
+                isOtherCleaningTrash = true;
+            }
         }
 
         if(!isOtherPackagingFood || !isOtherDeliverTakeawayFood)
@@ -231,7 +258,36 @@ public class HumanController : MonoBehaviour
             }
         }
 
+        if(!isOtherCleaningTrash)
+        {
+            for (int i = 0; i < simulator.trashs.Length; i++)
+            {
+                if (simulator.trashStates[i] == TrashState.OnTable)
+                {
+                    return Task.CleaningTrash;
+                }
+            }
+        }
+
         return Task.Nothing;
+    }
+
+    public void SetNextStateAfterMoving(HumanState nextState)
+    {
+        util.SetHoldingFoodStandingAnimation(animator);
+
+        setOnetimeValues = true;
+
+        humanState = nextState;
+    }
+
+    public void SetNextStateAfterHoldingMoving()
+    {
+        util.SetHoldingFoodStandingAnimation(animator);
+
+        setOnetimeValues = true;
+
+        humanState = HumanState.HoldingAndStanding;
     }
 
     public void ResetProperties()

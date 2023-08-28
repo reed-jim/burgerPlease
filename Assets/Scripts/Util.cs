@@ -128,6 +128,8 @@ public class Util : MonoBehaviour
 
             yield return new WaitForSeconds(0.02f);
         }
+
+        tf.eulerAngles = expectedAngle;
     }
 
 

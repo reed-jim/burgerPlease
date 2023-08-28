@@ -75,6 +75,7 @@ public class Counter : MonoBehaviour
                     {
                         if (gameProgressManager.progressStep == ProgressStep.PutFoodOnCounterTutorial)
                         {
+                            simulator.directionArrowState = DirectionArrowState.Set;
                             gameProgressManager.progressStep = ProgressStep.CashierTutorialStart;
                         }
 
@@ -89,10 +90,10 @@ public class Counter : MonoBehaviour
                             new Vector3
                             (
                                 0,
-                                1 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
+                                2 + simulator.foodColumnIndex[i] * simulator.foodSize.y,
                                 0
                             ),
-                            10,
+                            12,
                             0,
                             () =>
                             {

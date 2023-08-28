@@ -16,6 +16,10 @@ public enum ProgressStep
     PutFoodOnCounterTutorial,
     CashierTutorialStart,
     CashierTutorial,
+    PickTrashTutorialStart,
+    PickTrashTutorial,
+    ThrowTrashTutorialStart,
+    ThrowTrashTutorial,
     TutorialComplete,
     DoneBasic
 }
@@ -74,7 +78,7 @@ public class GameProgressManager : MonoBehaviour
 
                 progressStep = ProgressStep.Wait;
             }
-            else if(progressStep == ProgressStep.PickupFoodTutorialStart)
+            else if (progressStep == ProgressStep.PickupFoodTutorialStart)
             {
                 simulator.SpawnTutorialArrow(simulator.foodStorages[0].transform.position);
                 util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Pick up food!");
@@ -95,6 +99,37 @@ public class GameProgressManager : MonoBehaviour
 
                 progressStep = ProgressStep.CashierTutorial;
             }
+            else if (progressStep == ProgressStep.PickTrashTutorialStart)
+            {
+                for (int i = 0; i < simulator.tables.Length; i++)
+                {
+                    if (simulator.tableStates[i] == TableState.Dirty)
+                    {
+                        simulator.tutorialArrow.SetActive(true);
+                        simulator.tutorialText.gameObject.SetActive(true);
+
+                        simulator.SpawnTutorialArrow(simulator.tables[i].transform.position);
+                        util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Clean the table!");
+
+                        progressStep = ProgressStep.PickTrashTutorial;
+
+                        break;
+                    }
+
+                    if(i == simulator.tables.Length - 1)
+                    {
+                        simulator.tutorialArrow.SetActive(false);
+                        simulator.tutorialText.gameObject.SetActive(false);
+                    }
+                }
+            }
+            else if (progressStep == ProgressStep.ThrowTrashTutorialStart)
+            {
+                simulator.SpawnTutorialArrow(simulator.trashCan.transform.position);
+                util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Throw trash to the dumpster!");
+
+                progressStep = ProgressStep.ThrowTrashTutorial;
+            }
             else if (progressStep == ProgressStep.TutorialComplete)
             {
                 util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground,
@@ -113,7 +148,7 @@ public class GameProgressManager : MonoBehaviour
             else if (progressStep == ProgressStep.DoneBasic)
             {
                 // spawn tables
-                if(!isTableUpgradeSpawn)
+                if (!isTableUpgradeSpawn)
                 {
                     for (int i = 0; i < simulator.tables.Length; i++)
                     {
@@ -184,7 +219,7 @@ public class GameProgressManager : MonoBehaviour
                     isTakeawayCounterUpgradeSpawn = true;
                 }
                 // spawn office desk
-                if(!isOfficeTableUpgradeSpawn)
+                if (!isOfficeTableUpgradeSpawn)
                 {
                     if (!simulator.officeDesk[0].activeInHierarchy)
                     {

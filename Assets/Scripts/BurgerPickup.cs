@@ -39,14 +39,14 @@ public class BurgerPickup : MonoBehaviour
 
         if (other.gameObject.CompareTag("Player"))
         {
-            
-
             StartCoroutine(PickupFoodOneByOneByPlayer());
         }
 
         if (other.gameObject.CompareTag("NPC"))
         {
             HumanController controller = other.GetComponent<HumanController>();
+
+            controller.SetNextStateAfterMoving(HumanState.PickingFood);
 
             StartCoroutine(PickupFoodOneByOne(controller));
         }
@@ -58,9 +58,6 @@ public class BurgerPickup : MonoBehaviour
     {
         int capacity = controller.capacity;
         int numFoodTaken = controller.numFoodHold;
-
-        util.SetHoldingFoodStandingAnimation(controller.animator);
-        controller.humanState = HumanState.PickingFood;
 
         List<int> foodToPickIndexes = simulator.FindAndSortFood("storage" + stoveIndex, false);
 
@@ -119,12 +116,12 @@ public class BurgerPickup : MonoBehaviour
                                if (controller.numFoodHold == capacity)
                                {
                                    simulator.foodStorageStates[stoveIndex] = StoveState.Active;
-                                   controller.humanState = HumanState.HoldingFoodMoving;
+                                   controller.humanState = HumanState.HoldingAndMoving;
                                }
                                if (isLast && controller.numFoodHold < capacity)
                                {
                                    simulator.foodStorageStates[stoveIndex] = StoveState.Active;
-                                   controller.humanState = HumanState.HoldingFoodMoving;
+                                   controller.humanState = HumanState.HoldingAndMoving;
                                }
                            }
                         )
@@ -149,7 +146,7 @@ public class BurgerPickup : MonoBehaviour
         }
         if(numFoodTaken > 0 && numFoodTaken < capacity)
         {
-            controller.humanState = HumanState.HoldingFoodMoving;
+            controller.humanState = HumanState.HoldingAndMoving;
         }
     }
 
@@ -214,6 +211,7 @@ public class BurgerPickup : MonoBehaviour
                                    {
                                        if(gameProgressManager.progressStep == ProgressStep.PickupFoodTutorial)
                                        {
+                                           simulator.directionArrowState = DirectionArrowState.Set;
                                            gameProgressManager.progressStep = ProgressStep.PutFoodOnCounterTutorialStart;
                                        }
 

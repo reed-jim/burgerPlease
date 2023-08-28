@@ -5,6 +5,7 @@ using UnityEngine;
 public class TrashCan : MonoBehaviour
 {
     public Simulator simulator;
+    public GameProgressManager gameProgressManager;
     public PlayerController playerController;
 
     private void OnTriggerEnter(Collider other)
@@ -13,18 +14,32 @@ public class TrashCan : MonoBehaviour
         {
             if (playerController.playerState == PlayerState.HoldingTrashMoving)
             {
-                StartCoroutine(MoveTrashOneByOneToTrashCan());
-
                 playerController.playerState = PlayerState.HoldingTrashStanding;
+
+                MoveTrashOneByOneToTrashCanByPlayer("player");
+            }
+        }
+        else if (other.CompareTag("NPC"))
+        {
+            HumanController humanController = other.GetComponent<HumanController>();
+
+            if (humanController.humanState == HumanState.HoldingAndMoving)
+            {
+                humanController.SetNextStateAfterHoldingMoving();
+
+                MoveTrashOneByOneToTrashCanByNPC(
+                    humanController.id,
+                    humanController
+                );
             }
         }
     }
 
-    IEnumerator MoveTrashOneByOneToTrashCan()
+    IEnumerator MoveTrashOneByOneToTrashCan(string owner, OnMoveAllTrash onMoveAllTrash)
     {
         for (int i = 0; i < simulator.trashBelongTo.Length; i++)
         {
-            if (simulator.trashBelongTo[i] == "player")
+            if (simulator.trashBelongTo[i] == owner)
             {
                 int trashIndex = i;
 
@@ -49,6 +64,35 @@ public class TrashCan : MonoBehaviour
             }
         }
 
-        playerController.playerState = PlayerState.Ready;
+        onMoveAllTrash();
     }
+
+    void MoveTrashOneByOneToTrashCanByPlayer(string owner)
+    {
+        StartCoroutine(MoveTrashOneByOneToTrashCan(
+            owner,
+            () =>
+            {
+                if(gameProgressManager.progressStep == ProgressStep.ThrowTrashTutorial)
+                {
+                    gameProgressManager.progressStep = ProgressStep.TutorialComplete;
+                }
+
+                playerController.playerState = PlayerState.Ready;
+            }
+        ));
+    }
+
+    void MoveTrashOneByOneToTrashCanByNPC(string owner, HumanController humanController)
+    {
+        StartCoroutine(MoveTrashOneByOneToTrashCan(
+            owner,
+            () =>
+            {
+                humanController.ResetProperties();
+            }
+        ));
+    }
+
+    delegate void OnMoveAllTrash();
 }

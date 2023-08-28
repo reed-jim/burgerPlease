@@ -317,7 +317,7 @@ public class PackageTable : MonoBehaviour
                         0,
                         () =>
                         {
-                            controller.humanState = HumanState.HoldingFoodMoving;
+                            controller.humanState = HumanState.HoldingAndMoving;
                             simulator.packageBelongTo[packageIndex] = controller.id;
                             simulator.packageStates[packageIndex] = PackageState.Moving;
                         }
@@ -381,7 +381,7 @@ public class PackageTable : MonoBehaviour
                 {
                     HumanController npcController = npcManager.npcControllers[i];
 
-                    if (npcController.humanState == HumanState.HoldingFoodMoving)
+                    if (npcController.humanState == HumanState.HoldingAndMoving)
                     {
                         if (npcManager.npcs[i].transform.position.x > transform.position.x + simulator.packageTableSize.x / 2
                             && Mathf.Abs(npcManager.npcs[i].transform.position.x - (transform.position.x + simulator.packageTableSize.x / 2)) < 20
@@ -391,9 +391,7 @@ public class PackageTable : MonoBehaviour
                       
                             if (packageIndex != -1)
                             {
-                                util.SetHoldingFoodStandingAnimation(npcController.animator);
-
-                                npcController.humanState = HumanState.PackagingFood;
+                                npcController.SetNextStateAfterMoving(HumanState.PackagingFood);
 
                                 StartCoroutine(MoveFoodOneByOneToPackageByNPC(npcController, packageIndex));
                             }
@@ -402,18 +400,16 @@ public class PackageTable : MonoBehaviour
                     if (npcController.humanState == HumanState.Moving)
                     {
                         if (npcManager.npcs[i].transform.position.x < transform.position.x + simulator.packageTableSize.x / 2
-                            && Mathf.Abs(npcManager.npcs[i].transform.position.x - (transform.position.x + simulator.packageTableSize.x / 2)) < 20
-                            && Mathf.Abs(npcManager.npcs[i].transform.position.z - transform.position.z) < 20)
+                            && Mathf.Abs(npcManager.npcs[i].transform.position.x - (transform.position.x + simulator.packageTableSize.x / 2)) < 30
+                            && Mathf.Abs(npcManager.npcs[i].transform.position.z - transform.position.z) < 30)
                         {
                             int packageIndex = GetFilledPackageIndex();
 
                             if (packageIndex != -1)
                             {
+                                npcController.SetNextStateAfterMoving(HumanState.PickingPackage);
+
                                 PickingPackageByNPC(npcController, packageIndex);
-
-                                util.SetHoldingFoodStandingAnimation(npcController.animator);
-
-                                npcController.humanState = HumanState.PickingPackage;
                             }
                         }
                     }

@@ -27,7 +27,6 @@ public class MoneyPileManager : MonoBehaviour
     private Renderer m_renderer;
     private float deltaTime;
     private int unitValue;
-    private bool isTaken = false;
 
     // Destroy() must be the last to be called
     // Start is called before the first frame update
