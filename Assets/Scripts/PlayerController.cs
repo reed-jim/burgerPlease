@@ -8,13 +8,14 @@ public enum PlayerState
     Ready,
     PickingFood,
     PuttingFood,
+    PackagingFood,
+    PickingPackage,
     HoldingFoodStanding,
     HoldingFoodMoving,
     HoldingTrashStanding,
     HoldingTrashMoving,
-    PackagingFood,
-    PickingPackage,
-    HoldingPackageMoving
+    HoldingPackageMoving,
+    InteratingUI   
 }
 
 public class PlayerController : MonoBehaviour
@@ -172,7 +173,7 @@ public class PlayerController : MonoBehaviour
                     maxCapacityTMP.gameObject.SetActive(true);
                 }
 
-                maxCapacityTMP.gameObject.transform.position = transform.position + new Vector3(0, 18, 0);
+                maxCapacityTMP.gameObject.transform.position = transform.position + new Vector3(0, 21, 0);
             }
             else
             {

@@ -152,10 +152,10 @@ public class BurgerPickup : MonoBehaviour
 
     IEnumerator PickupFoodOneByOneByPlayer()
     {
-        if (playerController.playerState == PlayerState.Ready)
+        if (playerController.playerState == PlayerState.Ready || playerController.playerState == PlayerState.HoldingFoodMoving)
         {
             int capacity = playerController.capacity;
-            int numFoodTaken = 0;
+            int numFoodTaken = playerController.numberFoodHold;
 
             List<int> foodToPickIndexes = simulator.FindAndSortFood("storage" + stoveIndex);
 

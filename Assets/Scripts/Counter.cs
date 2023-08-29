@@ -27,9 +27,9 @@ public class Counter : MonoBehaviour
         {
             if (playerController.playerState == PlayerState.HoldingFoodMoving)
             {
-                StartCoroutine(MoveFoodOneByOne());
-
                 playerController.playerState = PlayerState.PuttingFood;
+
+                StartCoroutine(MoveFoodOneByOne());
             }
         }
         else if (other.CompareTag("NPC"))
@@ -81,7 +81,7 @@ public class Counter : MonoBehaviour
 
                         playerController.playerState = PlayerState.Ready;
                     }
-
+                  
                     StartCoroutine(
                         simulator.CurveMove(
                             simulator.foods[i].transform,

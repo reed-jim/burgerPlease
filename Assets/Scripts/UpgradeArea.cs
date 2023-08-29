@@ -11,6 +11,7 @@ public class UpgradeArea : MonoBehaviour
     public TMP_Text moneyTMP;
     public Simulator simulator;
     public ResourceManager resourceManager;
+    public UI_Manager uiManager;
     public Util util;
 
     public AudioSource puttingMoneySound;
@@ -102,11 +103,14 @@ public class UpgradeArea : MonoBehaviour
                     resourceManager.money -= valueInEachTime;
                     remainRequireValue -= valueInEachTime;
                     simulator.upgradeMoneyTMPs[index].text = util.ToShortFormNumber(remainRequireValue);
-                    moneyTMP.text = "$" + util.ToShortFormNumber(resourceManager.money);
+
+                    uiManager.SetMainMoneyUI();
+                    
+                   /* moneyTMP.text = "$" + util.ToShortFormNumber(resourceManager.money);
                     moneyTMP.rectTransform.sizeDelta =
                         new Vector2(moneyTMP.preferredWidth, moneyTMP.preferredHeight);
                     simulator.moneyBackground.sizeDelta =
-                        new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);
+                        new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);*/
                 }
 
                 yield return new WaitForSeconds(0.04f);

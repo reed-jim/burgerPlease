@@ -234,24 +234,24 @@ public class Simulator : MonoBehaviour
         loadGameScreenBackground.GetComponent<RectTransform>().sizeDelta =
             new Vector2(Screen.currentResolution.width, Screen.currentResolution.height);
 
-        moneyTMP.rectTransform.sizeDelta =
-            new Vector2(moneyTMP.preferredWidth, moneyTMP.preferredHeight);
-        moneyBackground.sizeDelta =
-            new Vector2(1.1f * moneyTMP.preferredWidth, 1.1f * moneyTMP.preferredHeight);
-        moneyBackground.anchoredPosition = new Vector3(
-            -0.5f * moneyBackground.sizeDelta.x - 0.05f * Screen.currentResolution.width,
-            -0.5f * moneyBackground.sizeDelta.y - 0.05f * Screen.currentResolution.width,
-            0
-        );
+        /*     moneyTMP.rectTransform.sizeDelta =
+                 new Vector2(moneyTMP.preferredWidth, moneyTMP.preferredHeight);
+             moneyBackground.sizeDelta =
+                 new Vector2(1.1f * moneyTMP.preferredWidth, 1.1f * moneyTMP.preferredHeight);
+             moneyBackground.anchoredPosition = new Vector3(
+                 -0.5f * moneyBackground.sizeDelta.x - 0.05f * Screen.currentResolution.width,
+                 -0.5f * moneyBackground.sizeDelta.y - 0.05f * Screen.currentResolution.width,
+                 0
+             );*/
 
         loadBarEmptyRT.sizeDelta =
-            new Vector2(0.8f * Screen.currentResolution.width, 0.03f * Screen.currentResolution.height);
+            new Vector2(0.8f * Screen.currentResolution.width, 0.02f * Screen.currentResolution.height);
         loadBarRT.sizeDelta =
-            new Vector2(0.8f * Screen.currentResolution.width, 0.03f * Screen.currentResolution.height);
+            new Vector2(0.8f * Screen.currentResolution.width, 0.02f * Screen.currentResolution.height);
         loadBarEmptyRT.anchoredPosition = new Vector3(0, 3f * loadBarEmptyRT.sizeDelta.y, 0);
         loadBarRT.anchoredPosition = new Vector3(0, 3f * loadBarRT.sizeDelta.y, 0);
 
-        tutorialTextBackground.anchoredPosition = new Vector3(0, -4 * tutorialTextBackground.sizeDelta.y, 0);
+        tutorialTextBackground.anchoredPosition = new Vector3(0, -0.2f * Screen.currentResolution.height, 0);
     }
 
     private void Awake()
@@ -490,6 +490,8 @@ public class Simulator : MonoBehaviour
         gate.SetActive(true);
         stoves[0].SetActive(true);
 
+        tutorialTextBackground.gameObject.SetActive(false);
+
         StartCoroutine(SpawnCustomer());
         StartCoroutine(SpawnFood(0));
         StartCoroutine(SpawnPackage());
@@ -525,6 +527,7 @@ public class Simulator : MonoBehaviour
         StartCoroutine(SimulatePackageCycle());
         StartCoroutine(SimulateCarCycle());
         StartCoroutine(SimulateTrashCycle());
+        StartCoroutine(cashierPosition.GetComponent<CashierPosition>().CheckCashier());
 
         StartCoroutine(packageTable.GetComponent<PackageTable>().CheckHumanAction());
 
@@ -829,7 +832,7 @@ public class Simulator : MonoBehaviour
                     {
                         packages[i].transform.position = player.transform.position
                             + new Vector3(0, 8, 0)
-                            + player.transform.forward * 6;
+                            + player.transform.forward * 8;
                     }
                     else if (packageBelongTo[i].Contains("npc"))
                     {
@@ -837,7 +840,7 @@ public class Simulator : MonoBehaviour
 
                         packages[i].transform.position = npcManager.npcs[npcIndex].transform.position
                             + new Vector3(0, 8, 0)
-                            + npcManager.npcs[npcIndex].transform.forward * 6;
+                            + npcManager.npcs[npcIndex].transform.forward * 8;
                     }
                 }
             }
@@ -981,6 +984,8 @@ public class Simulator : MonoBehaviour
 
                         if (packageStates[j] == PackageState.InTakeawayCounter)
                         {
+                            yield return new WaitForSeconds(0.5f);
+
                             StartCoroutine(
                                 CurveMove(
                                     packages[j].transform,
@@ -1151,7 +1156,7 @@ public class Simulator : MonoBehaviour
                 if (numFoodOfStorage[stoveIndex] >= resourceManager.stoveCapacities[stoveIndex])
                 {
                     maxCapacityTMPs[stoveIndex].transform.position =
-                        foodStorages[stoveIndex].transform.position + new Vector3(0, 17, 0);
+                        foodStorages[stoveIndex].transform.position + new Vector3(0, 19, 0);
                     maxCapacityTMPs[stoveIndex].gameObject.SetActive(true);
                     break;
                 }
@@ -2666,10 +2671,10 @@ public class Simulator : MonoBehaviour
 
         return new Vector3(
             packages[packageIndex].transform.position.x
-            - packageSize.x / 2 + (j + 1) * packageSize.x / (2 + 1),
-            packages[packageIndex].transform.position.y + packageSize.y / 2,
+            - foodSize.x / 2 + j * foodSize.x,
+            packages[packageIndex].transform.position.y - 0.5f * packageSize.y / 2,
             packages[packageIndex].transform.position.z
-            + packageSize.z / 2 - (i + 1) * packageSize.z / (2 + 1)
+            - foodSize.z / 2 + i * foodSize.z
         );
     }
 
@@ -2690,9 +2695,6 @@ public class Simulator : MonoBehaviour
 
             yield return new WaitForSeconds(0.02f);
         }
-
-        tutorialText.gameObject.SetActive(true);
-        tutorialTextBackground.gameObject.SetActive(true);
 
         loadGameScreen.SetActive(false);
     }

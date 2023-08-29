@@ -49,7 +49,7 @@ public class GameProgressManager : MonoBehaviour
 
     void Start()
     {
-        LoadGame();
+        StartCoroutine(LoadGame());
 
         if (isEnableTutorial)
         {
@@ -68,6 +68,8 @@ public class GameProgressManager : MonoBehaviour
             if (progressStep == ProgressStep.CreateGate)
             {
                 simulator.DisableObjectsForCreateGateStep();
+
+                simulator.tutorialTextBackground.gameObject.SetActive(true);
 
                 simulator.upgradeAreas[0].transform.localScale = new Vector3(
                     22,
@@ -112,7 +114,7 @@ public class GameProgressManager : MonoBehaviour
                     if (simulator.tableStates[i] == TableState.Dirty)
                     {
                         simulator.tutorialArrow.SetActive(true);
-                        simulator.tutorialText.gameObject.SetActive(true);
+                        simulator.tutorialTextBackground.gameObject.SetActive(true);
 
                         simulator.SpawnTutorialArrow(simulator.tables[i].transform.position);
                         util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Clean the table!");
@@ -125,14 +127,14 @@ public class GameProgressManager : MonoBehaviour
                     if (i == simulator.tables.Length - 1)
                     {
                         simulator.tutorialArrow.SetActive(false);
-                        simulator.tutorialText.gameObject.SetActive(false);
+                        simulator.tutorialTextBackground.gameObject.SetActive(false);
                     }
                 }
             }
             else if (progressStep == ProgressStep.ThrowTrashTutorialStart)
             {
                 simulator.SpawnTutorialArrow(simulator.trashCan.transform.position);
-                util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Throw trash to the dumpster!");
+                util.SetTMPTextOnBackground(simulator.tutorialText, simulator.tutorialTextBackground, "Throw away the garbage!");
 
                 progressStep = ProgressStep.ThrowTrashTutorial;
             }
@@ -261,7 +263,7 @@ public class GameProgressManager : MonoBehaviour
 
     IEnumerator SaveGame()
     {
-        while(true)
+        while (true)
         {
             PlayerPrefs.SetString("progressStep", progressStep.ToString());
 
@@ -285,8 +287,32 @@ public class GameProgressManager : MonoBehaviour
                 }
                 else
                 {
-                    PlayerPrefs.SetInt("npcActive" + i, 0);
+                    PlayerPrefs.SetInt("isNpcActive" + i, 0);
                 }
+
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            for (int i = 0; i < resourceManager.playerUpgradeCosts.Length; i++)
+            {
+                PlayerPrefs.SetInt("playerUpgradeCost" + i, resourceManager.playerUpgradeCosts[i]);
+                PlayerPrefs.SetInt("staffUpgradeCost" + i, resourceManager.staffUpgradeCosts[i]);
+
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            for (int i = 0; i < simulator.tables.Length; i++)
+            {
+                PlayerPrefs.SetInt("isTableActive" + i,
+                    simulator.tables[i].activeInHierarchy ? 1 : 0);
+
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            for (int i = 0; i < simulator.stoves.Length; i++)
+            {
+                PlayerPrefs.SetInt("isStoveActive" + i,
+                    simulator.stoves[i].activeInHierarchy ? 1 : 0);
 
                 yield return new WaitForSeconds(0.2f);
             }
@@ -300,13 +326,18 @@ public class GameProgressManager : MonoBehaviour
         PlayerPrefs.SetString("progressStep", progressStep.ToString());
     }
 
-    void LoadGame()
+    IEnumerator LoadGame()
     {
         bool isGameSavedOnce = PlayerPrefs.GetString("progressStep", "") == "" ? false : true;
 
         if (isGameSavedOnce)
         {
             progressStep = (ProgressStep)System.Enum.Parse(typeof(ProgressStep), PlayerPrefs.GetString("progressStep"));
+
+            if (progressStep != ProgressStep.TutorialComplete || progressStep != ProgressStep.DoneBasic)
+            {
+                progressStep = ProgressStep.CreateGate;
+            }
 
             resourceManager.money = PlayerPrefs.GetInt("money");
 
@@ -316,7 +347,7 @@ public class GameProgressManager : MonoBehaviour
 
             for (int i = 0; i < npc_Manager.npcs.Length; i++)
             {
-                bool isActive = PlayerPrefs.GetInt("npcActive", 0) == 1 ? true : false;
+                bool isActive = PlayerPrefs.GetInt("isNpcActive", 0) == 1 ? true : false;
 
                 if (isActive)
                 {
@@ -331,6 +362,30 @@ public class GameProgressManager : MonoBehaviour
 
                     npc_Manager.npcControllers[i].capacity = PlayerPrefs.GetInt("npcCapacity");
                     npc_Manager.npcControllers[i].speed = PlayerPrefs.GetInt("npcSpeed");
+                }
+            }
+
+            for (int i = 0; i < resourceManager.playerUpgradeCosts.Length; i++)
+            {
+                resourceManager.playerUpgradeCosts[i] = PlayerPrefs.GetInt("playerUpgradeCost" + i);
+                resourceManager.staffUpgradeCosts[i] = PlayerPrefs.GetInt("staffUpgradeCost" + i);
+            }
+
+            yield return new WaitForSeconds(0.5f);
+
+            for (int i = 0; i < simulator.tables.Length; i++)
+            {
+                if(PlayerPrefs.GetInt("isTableActive" + i) == 1)
+                {
+                    simulator.tables[i].SetActive(true);
+                }
+            }
+
+            for (int i = 0; i < simulator.stoves.Length; i++)
+            {
+                if(PlayerPrefs.GetInt("isStoveActive" + i) == 1)
+                {
+                    simulator.stoves[i].SetActive(true);
                 }
             }
         }

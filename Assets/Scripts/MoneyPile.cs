@@ -128,10 +128,7 @@ public class MoneyPile : MonoBehaviour
         totalMoneyTaken += unitValue;
         resourceManager.money += unitValue;
         uiManager.moneyTakenTMP.text = "$" + totalMoneyTaken;
-        simulator.moneyTMP.text = "$" + resourceManager.money;
-        simulator.moneyTMP.rectTransform.sizeDelta =
-                        new Vector2(simulator.moneyTMP.preferredWidth, simulator.moneyTMP.preferredHeight);
-        simulator.moneyBackground.sizeDelta =
-            new Vector2(1.1f * simulator.moneyTMP.preferredWidth, 1.1f * simulator.moneyTMP.preferredHeight);
+
+        uiManager.SetMainMoneyUI();
     }
 }
